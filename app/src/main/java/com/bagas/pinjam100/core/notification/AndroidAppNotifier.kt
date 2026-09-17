@@ -48,7 +48,7 @@ class AndroidAppNotifier(
         if (!canPost()) return id
 
         val built = NotificationCompat.Builder(context, notification.channel.channelId)
-            .setSmallIcon(R.drawable.ic_nav_notification)
+            .setSmallIcon(R.drawable.small_icon)
             .setContentTitle(notification.title)
             .setContentText(notification.body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(notification.body))

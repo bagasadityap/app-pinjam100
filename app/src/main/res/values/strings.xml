@@ -11,5 +11,5 @@
     <string name="mtrl_picker_date_header_unselected">Tanggal</string>
     <string name="notification_channel_verification">Verifikasi</string>
     <string name="notification_channel_disbursement">Pencairan</string>
-    <string name="notification_channel_payment">Pembayaran</string>
+    <string name="notification_channel_installment">Pembayaran</string>
 </resources>

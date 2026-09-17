@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <!-- Angka 1 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M1.5,6.5 L3.8,4.8 L6.2,4.8 L6.2,19.2 L3.6,19.2 L3.6,8.2 L1.5,9.8 Z" />
+
+    <!-- Angka 0 Pertama -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M10,4.5 C12.2,4.5 13.8,6.8 13.8,12 C13.8,17.2 12.2,19.5 10,19.5 C7.8,19.5 6.2,17.2 6.2,12 C6.2,6.8 7.8,4.5 10,4.5 Z M10,7 C9,7 8.6,8.8 8.6,12 C8.6,15.2 9,17 10,17 C11,17 11.4,15.2 11.4,12 C11.4,8.8 11,7 10,7 Z" />
+
+    <!-- Angka 0 Kedua -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M17.5,4.5 C19.7,4.5 21.3,6.8 21.3,12 C21.3,17.2 19.7,19.5 17.5,19.5 C15.3,19.5 13.7,17.2 13.7,12 C13.7,6.8 15.3,4.5 17.5,4.5 Z M17.5,7 C16.5,7 16.1,8.8 16.1,12 C16.1,15.2 16.5,17 17.5,17 C18.5,17 18.9,15.2 18.9,12 C18.9,8.8 18.5,7 17.5,7 Z" />
+
+    <!-- 3 Garis Sinar di Dekat Angka 0 -->
+    <!-- Garis Atas Vertikal/Miring -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M20.2,1.2 L21.7,0.5 C22,1.2 22.2,1.9 22.5,2.6 L21,3.3 C20.7,2.6 20.5,1.9 20.2,1.2 Z" />
+
+    <!-- Garis Tengah Diagonal -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M21.8,4.2 L23.4,3.2 C23.8,3.8 24,4.3 24,4.7 L22.4,5.7 C22.4,5.3 22.1,4.7 21.8,4.2 Z" />
+
+    <!-- Garis Bawah Horizontal -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M22,7.2 L23.8,7 C23.9,7.5 24,8.1 24,8.6 L22.2,8.8 C22.2,8.3 22.1,7.8 22,7.2 Z" />
+</vector>

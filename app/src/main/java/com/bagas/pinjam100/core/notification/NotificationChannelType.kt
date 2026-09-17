@@ -27,9 +27,9 @@ enum class NotificationChannelType(
         nameRes = R.string.notification_channel_disbursement,
         importance = NotificationManagerCompat.IMPORTANCE_HIGH,
     ),
-    PAYMENT(
-        id = "payment",
-        nameRes = R.string.notification_channel_payment,
+    INSTALLMENT(
+        id = "installment",
+        nameRes = R.string.notification_channel_installment,
         importance = NotificationManagerCompat.IMPORTANCE_HIGH,
     ),
     PROMO(
@@ -47,7 +47,7 @@ enum class NotificationChannelType(
             when (event) {
                 "verification" -> VERIFICATION
                 "disbursement" -> DISBURSEMENT
-                "installment" -> PAYMENT
+                "installment" -> INSTALLMENT
                 "promo" -> PROMO
                 else -> GENERAL
             }

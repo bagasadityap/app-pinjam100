@@ -18,29 +18,41 @@ class PushMessagingService : FirebaseMessagingService() {
     // Initialize required FCM topic subscriptions.
     override fun onCreate() {
         super.onCreate()
-        Log.d(PushMessagingService::class.java.simpleName, "BISMILLAHHHHH")
         subscribeToTopics()
     }
 
     // Re-subscribe to topics when the FCM token changes.
-    override fun onRegistered(installationId: String) {
-        super.onRegistered(installationId)
-        Log.d(PushMessagingService::class.java.simpleName, installationId)
+    override fun onNewToken(token: String) {
+        super.onNewToken(token)
+        Log.d(TAG, "FCM token: $token")
+        subscribeToTopics()
     }
 
     // Handle incoming FCM messages and display notifications.
     override fun onMessageReceived(message: RemoteMessage) {
+        super.onMessageReceived(message)
+
         val data = message.data
 
-        val title = message.notification?.title ?: data[KEY_TITLE] ?: return
-        val body = message.notification?.body.orEmpty()
+        Log.d(TAG, "FCM message received: $data")
+        Log.d(TAG, "FCM from: ${message.from}")
+
+        val title = data[KEY_TITLE] ?: return
+        val body = data[KEY_BODY] ?: return
+        val channel = data[KEY_CHANNEL]
+        val deeplink = data[KEY_DEEP_LINK]
+
+        Log.d(TAG, "Notification title: $title")
+        Log.d(TAG, "Notification body: $body")
+        Log.d(TAG, "Notification channel: $channel")
+        Log.d(TAG, "Notification deeplink: $deeplink")
 
         notifier.show(
             AppNotification(
                 title = title,
                 body = body,
-                channel = NotificationChannelType.fromEvent(data[KEY_CHANNEL]),
-                deepLink = data[KEY_DEEP_LINK]
+                channel = NotificationChannelType.fromEvent(channel),
+                deepLink = deeplink
             )
         )
     }

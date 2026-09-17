@@ -1,54 +1,25 @@
 #!/usr/bin/env node
-// GOOGLE_APPLICATION_CREDENTIALS=firebase-credentials.json node scripts/fcm-push.mjs --topic verification
-// GOOGLE_APPLICATION_CREDENTIALS=firebase-credentials.json node scripts/fcm-push.mjs --topic disbursement
-// GOOGLE_APPLICATION_CREDENTIALS=firebase-credentials.json node scripts/fcm-push.mjs --topic installment
 // GOOGLE_APPLICATION_CREDENTIALS=firebase-credentials.json node scripts/fcm-push.mjs --topic promo
 // GOOGLE_APPLICATION_CREDENTIALS=firebase-credentials.json node scripts/fcm-push.mjs --fid <installationId>
-
 import { accessToken, serviceAccount } from './fcm-token.mjs'
 
-const TOPICS = ['promo', 'verification', 'disbursement', 'installment']
+const TOPICS = ['promo', 'announcement']
 const FID_PATTERN = /^[A-Za-z0-9_-]{16,}$/
 const CHANNELS = ['general', 'transaction', 'promo']
 const DEEP_LINK_SCHEME = 'bcaf:'
 
 const DEFAULTS = {
-  topic: 'verification',
-  title: 'Akun Berhasil Diverifikasi',
-  body: 'Akun kamu telah berhasil diverifikasi.',
-  channel: 'transaction',
-  deeplink: '',
-}
-
-const TOPIC_DEFAULTS = {
-  promo: {
-    title: 'Promo Pinjam100',
-    body: 'Ada promo menarik untuk kamu. Ketuk untuk melihat detailnya.',
-    channel: 'promo',
-    deeplink: '',
-  },
-  verification: {
-    title: 'Akun Berhasil Diverifikasi',
-    body: 'Akun kamu telah berhasil diverifikasi.',
-    channel: 'transaction',
-    deeplink: '',
-  },
-  disbursement: {
-    title: 'Pencairan Berhasil',
-    body: 'Dana pinjaman kamu telah berhasil dicairkan.',
-    channel: 'transaction',
-    deeplink: 'bcaf://disbursement/123',
-  },
-  installment: {
-    title: 'Pembayaran Angsuran Berhasil',
-    body: 'Pembayaran angsuran kamu telah berhasil.',
-    channel: 'transaction',
-    deeplink: 'bcaf://installment/123',
-  },
+  topic: 'promo',
+  title: 'Transaksi berhasil',
+  body: 'Ketuk untuk membuka detail transaksi TRX-001.',
+  //channel: 'transaction',
+  channel: 'promo',
+  deeplink: 'bcaf://transaction/TRX-001',
 }
 
 const USAGE = `
-Trigger push notification FCM HTTP v1 ke topic atau satu perangkat.
+Trigger push notification FCM HTTP v1 ke topic atau ke satu perangkat lewat Firebase
+installation id (data-only, agar deeplink selalu diproses aplikasi).
 
   GOOGLE_APPLICATION_CREDENTIALS=firebase-credentials.json \\
     node scripts/fcm-push.mjs [opsi]
@@ -58,20 +29,21 @@ Target (pilih salah satu, default: --topic ${DEFAULTS.topic}):
   --fid <id>         Firebase installation id satu perangkat
 
 Opsi:
-  --deeplink <uri>   Deeplink notifikasi
-  --title <teks>     Judul notifikasi
-  --body <teks>      Isi notifikasi
-  --channel <id>     ${CHANNELS.join(' | ')}
+  --deeplink <uri>   Default: ${DEFAULTS.deeplink}
+  --title <teks>     Default: ${DEFAULTS.title}
+  --body <teks>      Default: ${DEFAULTS.body}
+  --channel <id>     ${CHANNELS.join(' | ')} (default: ${DEFAULTS.channel})
   --project <id>     Default: project_id dari service account
-  --dry-run          Validasi payload tanpa mengirim
+  --dry-run          Validasi payload di server FCM tanpa benar-benar mengirim
   --help
 
-Contoh:
-  --topic verification
-  --topic disbursement
-  --topic installment
-  --topic promo
-  --fid <installationId>
+Perangkat hanya menerima kiriman topic bila sudah subscribe lewat
+DeviceRegistrationRepository.subscribe(). FCM selalu menerima kiriman ke topic,
+termasuk topic tanpa satu pun subscriber, jadi respons sukses bukan bukti terkirim.
+
+Installation id terbit dari FirebaseMessaging.register() dan sampai ke
+PushMessagingService.onRegistered(). Berbeda dengan topic, FCM menolak kiriman
+--fid bila id-nya tidak dikenal, jadi respons sukses berarti benar-benar terkirim.
 `
 
 function parseArgs(argv) {
@@ -80,24 +52,16 @@ function parseArgs(argv) {
 
   for (let i = 0; i < argv.length; i += 1) {
     const arg = argv[i]
-
-    if (!arg.startsWith('--')) {
-      throw new Error(`Argumen tidak dikenal: ${arg}`)
-    }
+    if (!arg.startsWith('--')) throw new Error(`Argumen tidak dikenal: ${arg}`)
 
     const [key, inlineValue] = arg.slice(2).split(/=(.*)/s)
-
     if (flags.has(key)) {
       parsed[key] = true
       continue
     }
 
     const value = inlineValue ?? argv[++i]
-
-    if (value === undefined) {
-      throw new Error(`Opsi --${key} butuh nilai`)
-    }
-
+    if (value === undefined) throw new Error(`Opsi --${key} butuh nilai`)
     parsed[key] = value
   }
 
@@ -113,16 +77,12 @@ function buildTarget(args) {
     if (!FID_PATTERN.test(args.fid)) {
       throw new Error(`Installation id tidak valid: ${args.fid}`)
     }
-
     return { fid: args.fid }
   }
 
   const topic = args.topic ?? DEFAULTS.topic
-
   if (!TOPICS.includes(topic)) {
-    throw new Error(
-      `Topic "${topic}" tidak dikenal, pilih: ${TOPICS.join(', ')}`
-    )
+    throw new Error(`Topic "${topic}" tidak dikenal aplikasi, pilih: ${TOPICS.join(', ')}`)
   }
 
   return { topic }
@@ -131,51 +91,32 @@ function buildTarget(args) {
 function buildMessage(args) {
   const target = buildTarget(args)
 
-  const defaults = target.topic
-    ? TOPIC_DEFAULTS[target.topic]
-    : DEFAULTS
-
-  const channel = args.channel ?? defaults.channel
-
+  const channel = args.channel ?? DEFAULTS.channel
   if (!CHANNELS.includes(channel)) {
-    throw new Error(
-      `Channel "${channel}" tidak dikenal, pilih: ${CHANNELS.join(', ')}`
-    )
+    throw new Error(`Channel "${channel}" tidak dikenal, pilih: ${CHANNELS.join(', ')}`)
   }
 
-  const deeplink = args.deeplink ?? defaults.deeplink
-
-  if (deeplink) {
-    const parsedDeepLink = URL.parse(deeplink)
-
-    if (!parsedDeepLink) {
-      throw new Error(`Deeplink bukan URI valid: ${deeplink}`)
-    }
-
-    if (parsedDeepLink.protocol !== DEEP_LINK_SCHEME) {
-      console.warn(
-        `Peringatan: scheme "${parsedDeepLink.protocol}" bukan ${DEEP_LINK_SCHEME}.`
-      )
-    }
+  const deeplink = args.deeplink ?? DEFAULTS.deeplink
+  const parsedDeepLink = URL.parse(deeplink)
+  if (!parsedDeepLink) throw new Error(`Deeplink bukan URI valid: ${deeplink}`)
+  if (parsedDeepLink.protocol !== DEEP_LINK_SCHEME) {
+    console.warn(`Peringatan: scheme "${parsedDeepLink.protocol}" bukan ${DEEP_LINK_SCHEME}, aplikasi kemungkinan mengabaikannya.`)
   }
 
   return {
     ...target,
     data: {
-      title: args.title ?? defaults.title,
-      body: args.body ?? defaults.body,
+      title: args.title ?? DEFAULTS.title,
+      body: args.body ?? DEFAULTS.body,
       channel,
       deeplink,
     },
-    android: {
-      priority: 'high',
-    },
+    android: { priority: 'high' },
   }
 }
 
 async function send(projectId, bearer, message, dryRun) {
-  const url =
-    `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
+  const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`
 
   try {
     const res = await fetch(url, {
@@ -184,16 +125,12 @@ async function send(projectId, bearer, message, dryRun) {
         Authorization: `Bearer ${bearer}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        validate_only: Boolean(dryRun),
-        message,
-      }),
+      body: JSON.stringify({ validate_only: Boolean(dryRun), message }),
     })
 
     const text = await res.text()
 
     let json
-
     try {
       json = JSON.parse(text)
     } catch {
@@ -217,7 +154,6 @@ async function send(projectId, bearer, message, dryRun) {
 
 try {
   const args = parseArgs(process.argv.slice(2))
-
   if (args.help) {
     console.log(USAGE.trim())
     process.exit(0)
@@ -229,22 +165,9 @@ try {
 
   console.log(JSON.stringify(message, null, 2))
 
-  const result = await send(
-    projectId,
-    await accessToken(sa),
-    message,
-    args['dry-run']
-  )
-
-  const target = message.fid
-    ? `installation id ${message.fid}`
-    : `topic ${message.topic}`
-
-  console.log(
-    args['dry-run']
-      ? 'Payload valid (dry run, tidak dikirim).'
-      : `Terkirim ke ${target}: ${result.name}`
-  )
+  const result = await send(projectId, await accessToken(sa), message, args['dry-run'])
+  const target = message.fid ? `installation id ${message.fid}` : `topic ${message.topic}`
+  console.log(args['dry-run'] ? 'Payload valid (dry run, tidak dikirim).' : `Terkirim ke ${target}: ${result.name}`)
 } catch (error) {
   console.error(error.message)
   process.exit(1)
