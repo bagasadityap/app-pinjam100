@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">pinjam100</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_general">Umum</string>
+    <string name="notification_channel_transaction">Transaksi</string>
+    <string name="notification_channel_promo">Promo</string>
+    <string name="notification_manual_action">Kirim Notifikasi Uji</string>
+    <string name="notification_manual_title">Pengajuan Pinjaman Disetujui</string>
+    <string name="notification_manual_body">Pengajuan pinjaman Anda telah disetujui. Ketuk untuk melihat detail pengajuan.</string>
+    <string name="mtrl_picker_date_header_unselected">Tanggal</string>
+</resources>
