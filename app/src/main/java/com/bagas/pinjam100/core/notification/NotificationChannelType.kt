@@ -17,9 +17,19 @@ enum class NotificationChannelType(
         nameRes = R.string.notification_channel_general,
         importance = NotificationManagerCompat.IMPORTANCE_DEFAULT,
     ),
-    TRANSACTION(
-        id = "transaction",
-        nameRes = R.string.notification_channel_transaction,
+    VERIFICATION(
+        id = "verification",
+        nameRes = R.string.notification_channel_verification,
+        importance = NotificationManagerCompat.IMPORTANCE_HIGH,
+    ),
+    DISBURSEMENT(
+        id = "disbursement",
+        nameRes = R.string.notification_channel_disbursement,
+        importance = NotificationManagerCompat.IMPORTANCE_HIGH,
+    ),
+    PAYMENT(
+        id = "payment",
+        nameRes = R.string.notification_channel_payment,
         importance = NotificationManagerCompat.IMPORTANCE_HIGH,
     ),
     PROMO(
@@ -27,11 +37,19 @@ enum class NotificationChannelType(
         nameRes = R.string.notification_channel_promo,
         importance = NotificationManagerCompat.IMPORTANCE_DEFAULT,
         channelId = "promo_sound_v1",
-//        soundRes = R.raw.faaaa,
     );
 
     companion object {
         fun fromId(id: String?): NotificationChannelType =
             entries.firstOrNull { it.id == id } ?: GENERAL
+
+        fun fromEvent(event: String?): NotificationChannelType =
+            when (event) {
+                "verification" -> VERIFICATION
+                "disbursement" -> DISBURSEMENT
+                "installment" -> PAYMENT
+                "promo" -> PROMO
+                else -> GENERAL
+            }
     }
 }

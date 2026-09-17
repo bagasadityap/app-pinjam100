@@ -5,7 +5,8 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class LoginCredentials(
     val phoneNumber: String,
-    val password: String
+    val password: String,
+    val fcmToken: String
 ) {
     companion object {
     }

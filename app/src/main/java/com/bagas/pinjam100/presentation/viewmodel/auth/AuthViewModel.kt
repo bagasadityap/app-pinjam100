@@ -11,6 +11,7 @@ import com.bagas.pinjam100.domain.model.auth.ResendOtpData
 import com.bagas.pinjam100.domain.model.auth.ResetPasswordData
 import com.bagas.pinjam100.domain.model.auth.VerifyOtpData
 import com.bagas.pinjam100.domain.repository.AuthRepository
+import com.google.firebase.messaging.FirebaseMessaging
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,35 +61,50 @@ class AuthViewModel @Inject constructor(
             return
         }
 
-        val credentials = LoginCredentials(
-            phoneNumber = normalizePhoneNumber(phoneNumber),
-            password = password
-        )
-
         viewModelScope.launch {
             markSubmitting()
 
-            when (val result = authRepository.login(credentials)) {
-                is AppResult.Success -> {
-                    _uiState.update {
-                        it.copy(
-                            errorMessage = null,
-                            status = AuthStatus.AUTHENTICATED,
-                            user = result.data.user
+            FirebaseMessaging.getInstance().token
+                .addOnSuccessListener { token ->
+                    viewModelScope.launch {
+                        val credentials = LoginCredentials(
+                            phoneNumber = normalizePhoneNumber(phoneNumber),
+                            password = password,
+                            fcmToken = token
                         )
-                    }
-                }
 
-                is AppResult.Failure -> {
-                    _uiState.update {
-                        it.copy(
-                            errorMessage = result.failure.toMessage(),
-                            status = AuthStatus.UNAUTHENTICATED
-                        )
+                        when (val result = authRepository.login(credentials)) {
+                            is AppResult.Success -> {
+                                _uiState.update {
+                                    it.copy(
+                                        errorMessage = null,
+                                        status = AuthStatus.AUTHENTICATED,
+                                        user = result.data.user
+                                    )
+                                }
+                            }
+
+                            is AppResult.Failure -> {
+                                _uiState.update {
+                                    it.copy(
+                                        errorMessage = result.failure.toMessage(),
+                                        status = AuthStatus.UNAUTHENTICATED
+                                    )
+                                }
+                            }
+                        }
+
+                        markIdle()
                     }
                 }
-            }
-            markIdle()
+                .addOnFailureListener {
+                    _uiState.update {
+                        it.copy(
+                            errorMessage = "Gagal mendapatkan token notifikasi"
+                        )
+                    }
+                    markIdle()
+                }
         }
     }
 

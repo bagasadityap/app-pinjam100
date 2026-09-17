@@ -12,7 +12,8 @@ import com.bagas.pinjam100.domain.model.auth.VerifyOtpData
 
 fun LoginCredentials.toRequest() = LoginRequest(
     phoneNumber = phoneNumber,
-    password = password
+    password = password,
+    fcmToken = fcmToken
 )
 
 fun LoginResponse.toDomain() = AuthSession(

@@ -29,7 +29,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField(
-            "String", "BASE_URL", "\"https://eac4-216-243-116-24.ngrok-free.app\""
+            "String", "BASE_URL", "\"https://75b5-103-165-222-114.ngrok-free.app\""
         )
     }
 

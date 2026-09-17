@@ -1,7 +1,6 @@
 package com.bagas.pinjam100
 
 import android.Manifest
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -23,31 +22,42 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.bagas.pinjam100.core.notification.AppNotification
-import com.bagas.pinjam100.core.notification.AppNotifier
 import com.bagas.pinjam100.presentation.navigation.AppNavHost
 import com.bagas.pinjam100.presentation.viewmodel.auth.AuthViewModel
 import com.bagas.pinjam100.ui.theme.Pinjam100Theme
 import dagger.hilt.android.AndroidEntryPoint
-import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val authViewModel: AuthViewModel by viewModels()
-    private val notificationPermissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
-    @Inject
-    lateinit var notifier: AppNotifier
+
+    private val notificationPermissionLauncher =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission()
+        ) {}
+
     private fun requestNotificationPermission() {
-        val granted = Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-                ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+
+        val granted = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.POST_NOTIFICATIONS
+        ) == PackageManager.PERMISSION_GRANTED
+
+        if (!granted) {
+            notificationPermissionLauncher.launch(
+                Manifest.permission.POST_NOTIFICATIONS
+            )
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        requestNotificationPermission()
+
         setContent {
             Pinjam100Theme {
                 val authState by authViewModel.uiState.collectAsStateWithLifecycle()
@@ -56,13 +66,6 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(authState.isRestoringSession) {
                     if (!authState.isRestoringSession) {
                         navReady = true
-
-                        notifier.show(
-                            AppNotification(
-                                title = "SUDAH LOGIN CUY",
-                                body = "MANTAP SEKALI"
-                            )
-                        )
                     }
                 }
 
@@ -80,7 +83,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun SessionRestoringIndicator() {
-    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
         CircularProgressIndicator()
     }
 }

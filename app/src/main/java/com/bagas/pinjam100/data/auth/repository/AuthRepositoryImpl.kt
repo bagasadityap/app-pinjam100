@@ -43,7 +43,8 @@ class AuthRepositoryImpl(
                 val envelope = remoteDataSource.login(
                     LoginRequest(
                         phoneNumber = credentials.phoneNumber,
-                        password = credentials.password
+                        password = credentials.password,
+                        fcmToken = credentials.fcmToken
                     )
                 )
 
