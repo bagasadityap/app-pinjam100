@@ -58,6 +58,7 @@ import com.bagas.pinjam100.presentation.viewmodel.customer.CustomerOnboardingUIS
 import com.bagas.pinjam100.ui.theme.Pinjam100Theme
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -87,7 +88,22 @@ fun EmploymentDataScreen(
     var showEmploymentTypeDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
-    val datePickerState = rememberDatePickerState()
+    val minAllowedTimestamp = remember {
+        Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : androidx.compose.material3.SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis <= minAllowedTimestamp
+            }
+        }
+    )
 
     if (showEmploymentTypeDialog) {
         SelectionDialog(
@@ -171,7 +187,6 @@ fun EmploymentDataScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Step Progress Indicator
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -200,7 +215,6 @@ fun EmploymentDataScreen(
                 }
             }
 
-            // Informasi Pekerjaan Section Card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -260,7 +274,6 @@ fun EmploymentDataScreen(
                 }
             }
 
-            // Penghasilan & Kontak Perusahaan Section Card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -320,7 +333,6 @@ fun EmploymentDataScreen(
                 }
             }
 
-            // Action Button
             item {
                 Spacer(modifier = Modifier.height(4.dp))
                 Button(

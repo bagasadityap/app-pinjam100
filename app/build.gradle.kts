@@ -29,7 +29,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField(
-            "String", "BASE_URL", "\"https://75b5-103-165-222-114.ngrok-free.app\""
+            "String", "BASE_URL", "\"https://api.pinjam100.bagasaditya.com\""
         )
     }
 
@@ -110,10 +110,13 @@ dependencies {
     implementation(libs.firebase.messaging)
     implementation(libs.kotlinx.coroutines.play.services)
     
-    //Camera
+    // Camera
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
+
+    // Image Compressor
+    implementation(libs.androidx.exifinterface)
 
     // Image loading
     implementation(libs.coil.compose)

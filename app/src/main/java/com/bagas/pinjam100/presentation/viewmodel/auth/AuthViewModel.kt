@@ -3,6 +3,7 @@ package com.bagas.pinjam100.presentation.viewmodel.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bagas.pinjam100.core.error.AppResult
+import com.bagas.pinjam100.core.network.CommonFailure
 import com.bagas.pinjam100.domain.model.auth.ChangePasswordData
 import com.bagas.pinjam100.domain.model.auth.ForgotPasswordData
 import com.bagas.pinjam100.domain.model.auth.LoginCredentials
@@ -85,9 +86,25 @@ class AuthViewModel @Inject constructor(
                             }
 
                             is AppResult.Failure -> {
+                                val message = when (val appFailure = result.failure) {
+                                    is CommonFailure.ApiError -> {
+                                        appFailure.message?.takeIf { it.isNotBlank() }
+                                            ?: appFailure.details.joinToString(", ").ifBlank {
+                                                "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                                            }
+                                    }
+                                    is CommonFailure.Unauthorized -> {
+                                        appFailure.message?.takeIf { it.isNotBlank() }
+                                            ?: "Nomor telepon atau password salah"
+                                    }
+                                    is CommonFailure.Network -> "Koneksi internet bermasalah."
+                                    is CommonFailure.Unexpected -> "Terjadi kesalahan tidak terduga."
+                                    else -> "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                                }
+
                                 _uiState.update {
                                     it.copy(
-                                        errorMessage = result.failure.toMessage(),
+                                        errorMessage = message,
                                         status = AuthStatus.UNAUTHENTICATED
                                     )
                                 }
@@ -109,6 +126,7 @@ class AuthViewModel @Inject constructor(
     }
 
     fun register(
+        nationalId: String,
         fullName: String,
         phoneNumber: String,
         email: String,
@@ -118,8 +136,19 @@ class AuthViewModel @Inject constructor(
     ) {
         if (_uiState.value.isSubmitting) return
 
+        val cleanedPhone = phoneNumber.trim().let { phone ->
+            when {
+                phone.startsWith("62") -> phone.drop(2)
+                phone.startsWith("0") -> phone.drop(1)
+                else -> phone
+            }
+        }
+
+        val emailPattern = android.util.Patterns.EMAIL_ADDRESS
+
         when {
-            fullName.isBlank() ||
+            nationalId.isBlank() ||
+                    fullName.isBlank() ||
                     phoneNumber.isBlank() ||
                     email.isBlank() ||
                     password.isBlank() ||
@@ -127,6 +156,42 @@ class AuthViewModel @Inject constructor(
                 _uiState.update {
                     it.copy(
                         errorMessage = "Semua field wajib diisi"
+                    )
+                }
+                return
+            }
+
+            nationalId.length != 16 -> {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "NIK harus terdiri dari 16 digit"
+                    )
+                }
+                return
+            }
+
+            !emailPattern.matcher(email.trim()).matches() -> {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "Format email tidak valid"
+                    )
+                }
+                return
+            }
+
+            cleanedPhone.length !in 10..13 -> {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "Nomor telepon harus terdiri dari 10-13 digit angka"
+                    )
+                }
+                return
+            }
+
+            password.length < 8 -> {
+                _uiState.update {
+                    it.copy(
+                        errorMessage = "Password minimal harus 8 karakter"
                     )
                 }
                 return
@@ -143,6 +208,7 @@ class AuthViewModel @Inject constructor(
         }
 
         val data = RegisterData(
+            nationalId = nationalId.trim(),
             fullName = fullName.trim(),
             phoneNumber = normalizePhoneNumber(phoneNumber),
             email = email.trim(),
@@ -164,9 +230,25 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is AppResult.Failure -> {
+                    val message = when (val appFailure = result.failure) {
+                        is CommonFailure.ApiError -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: appFailure.details.joinToString(", ").ifBlank {
+                                    "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                                }
+                        }
+                        is CommonFailure.Unauthorized -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: "Akses tidak diizinkan."
+                        }
+                        is CommonFailure.Network -> "Koneksi internet bermasalah."
+                        is CommonFailure.Unexpected -> "Terjadi kesalahan tidak terduga."
+                        else -> "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                    }
+
                     _uiState.update {
                         it.copy(
-                            errorMessage = result.failure.toMessage()
+                            errorMessage = message
                         )
                     }
                 }
@@ -216,9 +298,25 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is AppResult.Failure -> {
+                    val message = when (val appFailure = result.failure) {
+                        is CommonFailure.ApiError -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: appFailure.details.joinToString(", ").ifBlank {
+                                    "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                                }
+                        }
+                        is CommonFailure.Unauthorized -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: "Akses tidak diizinkan."
+                        }
+                        is CommonFailure.Network -> "Koneksi internet bermasalah."
+                        is CommonFailure.Unexpected -> "Terjadi kesalahan tidak terduga."
+                        else -> "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                    }
+
                     _uiState.update {
                         it.copy(
-                            errorMessage = result.failure.toMessage()
+                            errorMessage = message
                         )
                     }
                 }
@@ -246,9 +344,25 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is AppResult.Failure -> {
+                    val message = when (val appFailure = result.failure) {
+                        is CommonFailure.ApiError -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: appFailure.details.joinToString(", ").ifBlank {
+                                    "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                                }
+                        }
+                        is CommonFailure.Unauthorized -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: "Akses tidak diizinkan."
+                        }
+                        is CommonFailure.Network -> "Koneksi internet bermasalah."
+                        is CommonFailure.Unexpected -> "Terjadi kesalahan tidak terduga."
+                        else -> "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                    }
+
                     _uiState.update {
                         it.copy(
-                            errorMessage = result.failure.toMessage()
+                            errorMessage = message
                         )
                     }
                 }
@@ -316,9 +430,25 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is AppResult.Failure -> {
+                    val message = when (val appFailure = result.failure) {
+                        is CommonFailure.ApiError -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: appFailure.details.joinToString(", ").ifBlank {
+                                    "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                                }
+                        }
+                        is CommonFailure.Unauthorized -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: "Akses tidak diizinkan."
+                        }
+                        is CommonFailure.Network -> "Koneksi internet bermasalah."
+                        is CommonFailure.Unexpected -> "Terjadi kesalahan tidak terduga."
+                        else -> "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                    }
+
                     _uiState.update {
                         it.copy(
-                            errorMessage = result.failure.toMessage()
+                            errorMessage = message
                         )
                     }
                 }
@@ -353,9 +483,25 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is AppResult.Failure -> {
+                    val message = when (val appFailure = result.failure) {
+                        is CommonFailure.ApiError -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: appFailure.details.joinToString(", ").ifBlank {
+                                    "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                                }
+                        }
+                        is CommonFailure.Unauthorized -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: "Akses tidak diizinkan."
+                        }
+                        is CommonFailure.Network -> "Koneksi internet bermasalah."
+                        is CommonFailure.Unexpected -> "Terjadi kesalahan tidak terduga."
+                        else -> "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                    }
+
                     _uiState.update {
                         it.copy(
-                            errorMessage = result.failure.toMessage()
+                            errorMessage = message
                         )
                     }
                 }
@@ -416,9 +562,25 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is AppResult.Failure -> {
+                    val message = when (val appFailure = result.failure) {
+                        is CommonFailure.ApiError -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: appFailure.details.joinToString(", ").ifBlank {
+                                    "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                                }
+                        }
+                        is CommonFailure.Unauthorized -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: "Akses tidak diizinkan."
+                        }
+                        is CommonFailure.Network -> "Koneksi internet bermasalah."
+                        is CommonFailure.Unexpected -> "Terjadi kesalahan tidak terduga."
+                        else -> "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                    }
+
                     _uiState.update {
                         it.copy(
-                            errorMessage = result.failure.toMessage()
+                            errorMessage = message
                         )
                     }
                 }

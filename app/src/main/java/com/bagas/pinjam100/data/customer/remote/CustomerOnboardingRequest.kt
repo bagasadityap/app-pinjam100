@@ -6,7 +6,6 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CustomerOnboardingRequest(
-    val nationalId: String?,
     val birthDate: String?,
     val placeOfBirth: String?,
     val gender: String?,

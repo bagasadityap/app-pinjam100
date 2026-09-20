@@ -5,6 +5,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class LimitResponse(
     val id: String,
+    val customerId: String,
     val creditLimit: Double,
     val availableLimit: Double,
     val createdDate: String,

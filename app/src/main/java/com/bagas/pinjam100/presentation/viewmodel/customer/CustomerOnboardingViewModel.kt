@@ -38,7 +38,6 @@ class CustomerOnboardingViewModel @Inject constructor(
     ) {
         _uiState.update {
             it.copy(
-                nationalId = nationalId,
                 birthDate = birthDate,
                 placeOfBirth = placeOfBirth,
                 gender = gender,
@@ -81,12 +80,6 @@ class CustomerOnboardingViewModel @Inject constructor(
             it.copy(
                 rekenings = rekenings
             )
-        }
-    }
-
-    fun updateNationalId(value: String) {
-        _uiState.update {
-            it.copy(nationalId = value)
         }
     }
 
@@ -269,7 +262,6 @@ class CustomerOnboardingViewModel @Inject constructor(
                     .toLongOrNull()
 
                 val onboarding = CustomerOnboarding(
-                    nationalId = state.nationalId.ifBlank { null },
                     birthDate = birthDate,
                     placeOfBirth = state.placeOfBirth.ifBlank { null },
                     gender = state.gender.ifBlank { null },

@@ -3,7 +3,6 @@ package com.bagas.pinjam100.domain.model.customer
 import com.bagas.pinjam100.domain.model.rekening.Rekening
 
 data class CustomerOnboarding(
-    val nationalId: String?,
     val birthDate: String?,
     val placeOfBirth: String?,
     val gender: String?,

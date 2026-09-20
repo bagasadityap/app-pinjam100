@@ -81,7 +81,6 @@ class PushMessagingService : FirebaseMessagingService() {
         const val TOPIC_VERIFICATION = "verification"
         const val TOPIC_DISBURSEMENT = "disbursement"
         const val TOPIC_INSTALLMENT = "installment"
-
         const val KEY_TITLE = "title"
         const val KEY_BODY = "body"
         const val KEY_CHANNEL = "channel"

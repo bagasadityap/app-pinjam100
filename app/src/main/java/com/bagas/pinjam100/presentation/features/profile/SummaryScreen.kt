@@ -62,7 +62,6 @@ fun SummaryScreen(
     val rekening = onboardingState.rekenings.firstOrNull()
 
     val personalData = listOf(
-        "NIK" to onboardingState.nationalId,
         "Tanggal Lahir" to onboardingState.birthDate,
         "Tempat Lahir" to onboardingState.placeOfBirth,
         "Jenis Kelamin" to onboardingState.gender,

@@ -466,7 +466,6 @@ fun NavGraphBuilder.onboardingGraph(
             PersonalDataScreen(
                 onboardingState = onboardingState,
                 wilayahState = wilayahState,
-                onNationalIdChanged = onboardingViewModel::updateNationalId,
                 onBirthDateChanged = onboardingViewModel::updateBirthDate,
                 onPlaceOfBirthChanged = onboardingViewModel::updatePlaceOfBirth,
                 onGenderChanged = onboardingViewModel::updateGender,

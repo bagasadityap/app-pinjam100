@@ -1,6 +1,8 @@
 package com.bagas.pinjam100.data.transaction.repository
 
 import com.bagas.pinjam100.core.error.AppResult
+import com.bagas.pinjam100.core.error.map
+import com.bagas.pinjam100.core.error.requirePayload
 import com.bagas.pinjam100.core.error.runApiCatching
 import com.bagas.pinjam100.data.transaction.remote.TransactionHistoryApi
 import com.bagas.pinjam100.data.transaction.remote.toDomain
@@ -25,8 +27,10 @@ class TransactionHistoryRepositoryImpl @Inject constructor(
             runApiCatching(json) {
                 remoteDataSource
                     .getByCustomerId(customerId)
-                    .map { it.toDomain() }
-                    .let { AppResult.Success(it) }
+                    .requirePayload()
+                    .map { response ->
+                        response.map { it.toDomain() }
+                    }
             }
         }
 }

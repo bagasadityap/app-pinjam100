@@ -32,6 +32,7 @@ fun AuthUserResponse.toDomain() = AuthUser(
 )
 
 fun RegisterData.toRequest() = RegisterRequest(
+    nationalId = nationalId,
     fullName = fullName,
     email = email,
     phoneNumber = phoneNumber,

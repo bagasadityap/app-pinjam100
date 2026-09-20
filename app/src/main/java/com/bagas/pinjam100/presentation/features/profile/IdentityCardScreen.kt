@@ -12,6 +12,7 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -53,8 +55,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -62,6 +63,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.LifecycleOwner
+import coil3.compose.AsyncImage
 import com.bagas.pinjam100.presentation.viewmodel.document.DocumentViewModel
 import com.bagas.pinjam100.ui.theme.Pinjam100Theme
 import okhttp3.MediaType.Companion.toMediaType
@@ -78,22 +80,32 @@ fun IdentityCardScreen(
     onBack: () -> Unit = {},
     onNext: () -> Unit = {}
 ) {
-    val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
     val documentState by documentViewModel.uiState.collectAsState()
 
     var imageCapture by remember {
         mutableStateOf<ImageCapture?>(null)
     }
 
+    var capturedPhoto by remember {
+        mutableStateOf<File?>(null)
+    }
+
+    var hasCameraPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) {}
-
-    val hasCameraPermission = ContextCompat.checkSelfPermission(
-        context,
-        Manifest.permission.CAMERA
-    ) == PackageManager.PERMISSION_GRANTED
+    ) { granted ->
+        hasCameraPermission = granted
+    }
 
     LaunchedEffect(Unit) {
         if (!hasCameraPermission) {
@@ -120,57 +132,100 @@ fun IdentityCardScreen(
             ) {
                 Button(
                     onClick = {
-                        val capture = imageCapture ?: return@Button
+                        if (capturedPhoto == null) {
+                            val capture = imageCapture ?: return@Button
 
-                        val photoFile = File(
-                            context.cacheDir,
-                            "ktp_${System.currentTimeMillis()}.jpg"
-                        )
+                            val photoFile = File(
+                                context.cacheDir,
+                                "ktp_${System.currentTimeMillis()}.jpg"
+                            )
 
-                        val outputOptions =
-                            ImageCapture.OutputFileOptions.Builder(photoFile).build()
+                            val outputOptions =
+                                ImageCapture.OutputFileOptions.Builder(photoFile).build()
 
-                        capture.takePicture(
-                            outputOptions,
-                            ContextCompat.getMainExecutor(context),
-                            object : ImageCapture.OnImageSavedCallback {
+                            capture.takePicture(
+                                outputOptions,
+                                ContextCompat.getMainExecutor(context),
+                                object : ImageCapture.OnImageSavedCallback {
 
-                                override fun onImageSaved(
-                                    outputFileResults: ImageCapture.OutputFileResults
-                                ) {
-                                    val filePart = MultipartBody.Part.createFormData(
-                                        "file",
-                                        photoFile.name,
-                                        photoFile.asRequestBody(
-                                            "image/jpeg".toMediaType()
-                                        )
-                                    )
+                                    override fun onImageSaved(
+                                        outputFileResults: ImageCapture.OutputFileResults
+                                    ) {
+                                        capturedPhoto = photoFile
+                                    }
 
-                                    val type = "KTP".toRequestBody(
-                                        "text/plain".toMediaType()
-                                    )
-
-                                    val customerIdBody = customerId.toRequestBody(
-                                        "text/plain".toMediaType()
-                                    )
-
-                                    documentViewModel.upload(
-                                        file = filePart,
-                                        type = type,
-                                        customerId = customerIdBody
-                                    )
+                                    override fun onError(
+                                        exception: ImageCaptureException
+                                    ) {
+                                        exception.printStackTrace()
+                                    }
                                 }
-
-                                override fun onError(
-                                    exception: ImageCaptureException
-                                ) {
-                                    exception.printStackTrace()
-                                }
-                            }
-                        )
+                            )
+                        } else {
+                            capturedPhoto = null
+                            imageCapture = null
+                        }
                     },
                     enabled = hasCameraPermission &&
                             imageCapture != null &&
+                            !documentState.isUploading,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(48.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CameraAlt,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    Spacer(modifier = Modifier.size(8.dp))
+
+                    Text(
+                        text = if (capturedPhoto == null) {
+                            "Ambil Foto"
+                        } else {
+                            "Ambil Ulang"
+                        },
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        val photoFile = capturedPhoto ?: return@Button
+
+                        val filePart = MultipartBody.Part.createFormData(
+                            "file",
+                            photoFile.name,
+                            photoFile.asRequestBody(
+                                "image/jpeg".toMediaType()
+                            )
+                        )
+
+                        val type = "KTP".toRequestBody(
+                            "text/plain".toMediaType()
+                        )
+
+                        val customerIdBody = customerId.toRequestBody(
+                            "text/plain".toMediaType()
+                        )
+
+                        documentViewModel.upload(
+                            file = filePart,
+                            type = type,
+                            customerId = customerIdBody
+                        )
+                    },
+                    enabled = capturedPhoto != null &&
                             !documentState.isUploading,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -190,14 +245,14 @@ fun IdentityCardScreen(
                         Spacer(modifier = Modifier.size(8.dp))
 
                         Text(
-                            text = "Mengunggah...",
+                            text = "Menyimpan...",
                             style = MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.Bold
                             )
                         )
                     } else {
                         Icon(
-                            imageVector = Icons.Filled.CameraAlt,
+                            imageVector = Icons.Filled.CheckCircle,
                             contentDescription = null,
                             modifier = Modifier.size(20.dp)
                         )
@@ -205,7 +260,7 @@ fun IdentityCardScreen(
                         Spacer(modifier = Modifier.size(8.dp))
 
                         Text(
-                            text = "Ambil Foto KTP",
+                            text = "Simpan Gambar",
                             style = MaterialTheme.typography.labelLarge.copy(
                                 fontWeight = FontWeight.Bold
                             )
@@ -224,7 +279,7 @@ fun IdentityCardScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Header & Step Progress
+            // Header & Progress Step Section
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -243,7 +298,7 @@ fun IdentityCardScreen(
                 }
             }
 
-            // Subtitle Description
+            // Subtitle Guidance
             item {
                 Text(
                     text = "Ambil foto KTP Anda untuk verifikasi identitas.",
@@ -253,9 +308,13 @@ fun IdentityCardScreen(
                 )
             }
 
-            // Camera Preview Container
+            // Camera / Preview Container
             item {
-                if (hasCameraPermission) {
+                if (capturedPhoto != null) {
+                    CapturedIdentityCardPhotoPreview(
+                        photoFile = capturedPhoto!!
+                    )
+                } else if (hasCameraPermission) {
                     IdentityCardCameraPreview(
                         lifecycleOwner = lifecycleOwner,
                         onImageCaptureReady = {
@@ -263,11 +322,15 @@ fun IdentityCardScreen(
                         }
                     )
                 } else {
-                    CameraPermissionPlaceholder()
+                    CameraPermissionPlaceholder(
+                        onClick = {
+                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                        }
+                    )
                 }
             }
 
-            // Guide Text
+            // Instruksi Pengambilan Foto
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -290,12 +353,45 @@ fun IdentityCardScreen(
                 }
             }
 
-            // KTP Guide Card
+            // Panduan KTP Card
             item {
                 IdentityCardGuide()
                 Spacer(modifier = Modifier.height(8.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun CapturedIdentityCardPhotoPreview(
+    photoFile: File
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(360.dp)
+            .clip(RoundedCornerShape(20.dp))
+    ) {
+        AsyncImage(
+            model = photoFile,
+            contentDescription = "Foto KTP",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        Box(
+            modifier = Modifier
+                .align(Alignment.Center)
+                .size(
+                    width = 160.dp,
+                    height = 230.dp
+                )
+                .border(
+                    width = 3.dp,
+                    color = Color.White,
+                    shape = CircleShape
+                )
+        )
     }
 }
 
@@ -375,50 +471,58 @@ private fun IdentityCardCameraPreview(
     lifecycleOwner: LifecycleOwner,
     onImageCaptureReady: (ImageCapture) -> Unit
 ) {
+    val context = androidx.compose.ui.platform.LocalContext.current
+
+    val previewView = remember {
+        PreviewView(context).apply {
+            scaleType = PreviewView.ScaleType.FILL_CENTER
+        }
+    }
+
+    LaunchedEffect(previewView, lifecycleOwner) {
+        val cameraProviderFuture =
+            ProcessCameraProvider.getInstance(context)
+
+        cameraProviderFuture.addListener({
+            val cameraProvider = cameraProviderFuture.get()
+
+            val preview = CameraPreview.Builder()
+                .build()
+                .also {
+                    it.surfaceProvider = previewView.surfaceProvider
+                }
+
+            val imageCapture = ImageCapture.Builder()
+                .setCaptureMode(
+                    ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
+                )
+                .build()
+
+            val cameraSelector =
+                CameraSelector.DEFAULT_BACK_CAMERA
+
+            cameraProvider.unbindAll()
+
+            cameraProvider.bindToLifecycle(
+                lifecycleOwner,
+                cameraSelector,
+                preview,
+                imageCapture
+            )
+
+            onImageCaptureReady(imageCapture)
+        }, ContextCompat.getMainExecutor(context))
+    }
+
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(300.dp)
+            .height(360.dp)
             .clip(RoundedCornerShape(20.dp))
     ) {
         AndroidView(
-            factory = { context ->
-                PreviewView(context).apply {
-                    scaleType = PreviewView.ScaleType.FILL_CENTER
-
-                    val cameraProviderFuture =
-                        ProcessCameraProvider.getInstance(context)
-
-                    cameraProviderFuture.addListener({
-                        val cameraProvider = cameraProviderFuture.get()
-
-                        val preview = CameraPreview.Builder()
-                            .build()
-                            .also {
-                                it.surfaceProvider = surfaceProvider
-                            }
-
-                        val imageCapture = ImageCapture.Builder()
-                            .setCaptureMode(
-                                ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY
-                            )
-                            .build()
-
-                        val cameraSelector =
-                            CameraSelector.DEFAULT_BACK_CAMERA
-
-                        cameraProvider.unbindAll()
-
-                        cameraProvider.bindToLifecycle(
-                            lifecycleOwner,
-                            cameraSelector,
-                            preview,
-                            imageCapture
-                        )
-
-                        onImageCaptureReady(imageCapture)
-                    }, ContextCompat.getMainExecutor(context))
-                }
+            factory = {
+                previewView
             },
             modifier = Modifier.fillMaxSize()
         )
@@ -426,12 +530,14 @@ private fun IdentityCardCameraPreview(
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
-                .fillMaxWidth(0.88f)
-                .height(180.dp)
+                .size(
+                    width = 160.dp,
+                    height = 230.dp
+                )
                 .border(
                     width = 3.dp,
                     color = Color.White,
-                    shape = RoundedCornerShape(14.dp)
+                    shape = CircleShape
                 )
         )
 
@@ -443,19 +549,22 @@ private fun IdentityCardCameraPreview(
             color = Color.White,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(bottom = 16.dp)
+                .padding(bottom = 18.dp)
         )
     }
 }
 
 @Composable
-private fun CameraPermissionPlaceholder() {
+private fun CameraPermissionPlaceholder(
+    onClick: () -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(300.dp)
+            .height(360.dp)
             .clip(RoundedCornerShape(20.dp))
-            .background(Color(0xFF111827)),
+            .background(Color(0xFF111827))
+            .clickable(onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Column(

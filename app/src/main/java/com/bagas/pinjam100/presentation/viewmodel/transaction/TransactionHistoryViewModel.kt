@@ -3,6 +3,7 @@ package com.bagas.pinjam100.presentation.viewmodel.transaction
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bagas.pinjam100.core.error.AppResult
+import com.bagas.pinjam100.core.network.CommonFailure
 import com.bagas.pinjam100.domain.repository.TransactionHistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,10 +53,26 @@ class TransactionHistoryViewModel @Inject constructor(
                 }
 
                 is AppResult.Failure -> {
+                    val message = when (val appFailure = result.failure) {
+                        is CommonFailure.ApiError -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: appFailure.details.joinToString(", ").ifBlank {
+                                    "Gagal mengambil data transaksi, silakan coba beberapa saat lagi"
+                                }
+                        }
+                        is CommonFailure.Unauthorized -> {
+                            appFailure.message?.takeIf { it.isNotBlank() }
+                                ?: "Akses tidak diizinkan."
+                        }
+                        is CommonFailure.Network -> "Koneksi internet bermasalah."
+                        is CommonFailure.Unexpected -> "Terjadi kesalahan tidak terduga."
+                        else -> "Terjadi kesalahan sistem, silakan coba beberapa saat lagi"
+                    }
+
                     _uiState.update {
                         it.copy(
                             isLoading = false,
-                            errorMessage = result.failure.toMessage()
+                            errorMessage = message
                         )
                     }
                 }

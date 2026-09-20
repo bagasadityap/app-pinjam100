@@ -4,7 +4,6 @@ import com.bagas.pinjam100.domain.model.document.Document
 import com.bagas.pinjam100.domain.model.rekening.Rekening
 
 data class CustomerDetail(
-    val nationalId: String?,
     val birthDate: String?,
     val placeOfBirth: String?,
     val gender: String?,

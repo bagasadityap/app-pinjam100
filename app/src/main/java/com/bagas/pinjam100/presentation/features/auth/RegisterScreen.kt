@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -38,6 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -57,7 +59,6 @@ fun RegisterScreen(
     val statusBarColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
     val view = LocalView.current
 
-    // Mengubah warna status bar langsung dari Window level
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as Activity).window
@@ -66,20 +67,37 @@ fun RegisterScreen(
         }
     }
 
+    var nationalId by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var phoneNumber by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var confirmPassword by remember { mutableStateOf("") }
 
+    var localError by remember { mutableStateOf<String?>(null) }
+
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val displayError = localError ?: uiState.errorMessage
+
+    val cleanedPhone = phoneNumber.trim().let { phone ->
+        when {
+            phone.startsWith("62") -> phone.drop(2)
+            phone.startsWith("0") -> phone.drop(1)
+            else -> phone
+        }
+    }
+
+    val emailPattern = android.util.Patterns.EMAIL_ADDRESS
+    val isEmailValid = email.isBlank() || emailPattern.matcher(email.trim()).matches()
+    val isPhoneValid = phoneNumber.isBlank() || cleanedPhone.length in 10..13
+    val isPasswordLengthValid = password.isBlank() || password.length >= 8
+    val isPasswordMatch = confirmPassword.isBlank() || password == confirmPassword
 
     Box(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f))
     ) {
-        // Header Curve
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -136,6 +154,41 @@ fun RegisterScreen(
                     verticalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
+                        text = "NIK",
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.SemiBold
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    OutlinedTextField(
+                        value = nationalId,
+                        onValueChange = {
+                            if (it.length <= 16 && it.all(Char::isDigit)) {
+                                nationalId = it
+                                localError = null
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        shape = RoundedCornerShape(14.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        placeholder = {
+                            Text(
+                                text = "Masukkan 16 digit NIK",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
                         text = "Nama Lengkap",
                         style = MaterialTheme.typography.labelLarge.copy(
                             fontWeight = FontWeight.SemiBold
@@ -144,7 +197,10 @@ fun RegisterScreen(
                     )
                     OutlinedTextField(
                         value = name,
-                        onValueChange = { name = it },
+                        onValueChange = {
+                            name = it
+                            localError = null
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
@@ -210,10 +266,14 @@ fun RegisterScreen(
 
                         OutlinedTextField(
                             value = phoneNumber,
-                            onValueChange = { phoneNumber = it },
+                            onValueChange = {
+                                phoneNumber = it
+                                localError = null
+                            },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
                             shape = RoundedCornerShape(14.dp),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             placeholder = {
                                 Text(
                                     text = "812 3456 7890",
@@ -245,7 +305,16 @@ fun RegisterScreen(
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                 }
-                            }
+                            },
+                            isError = !isPhoneValid
+                        )
+                    }
+                    if (!isPhoneValid) {
+                        Text(
+                            text = "Nomor telepon harus terdiri dari 10-13 digit angka",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
                         )
                     }
                 }
@@ -265,18 +334,31 @@ fun RegisterScreen(
                     )
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = {
+                            email = it
+                            localError = null
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                         placeholder = {
                             Text(
                                 text = "nama@email.com",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
-                        }
+                        },
+                        isError = !isEmailValid
                     )
+                    if (!isEmailValid) {
+                        Text(
+                            text = "Format email tidak valid",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -294,19 +376,31 @@ fun RegisterScreen(
                     )
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = {
+                            password = it
+                            localError = null
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
                         placeholder = {
                             Text(
-                                text = "Buat password",
+                                text = "Minimal 8 karakter",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
                         },
-                        visualTransformation = PasswordVisualTransformation()
+                        visualTransformation = PasswordVisualTransformation(),
+                        isError = !isPasswordLengthValid
                     )
+                    if (!isPasswordLengthValid) {
+                        Text(
+                            text = "Password minimal harus 8 karakter",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(16.dp))
@@ -324,7 +418,10 @@ fun RegisterScreen(
                     )
                     OutlinedTextField(
                         value = confirmPassword,
-                        onValueChange = { confirmPassword = it },
+                        onValueChange = {
+                            confirmPassword = it
+                            localError = null
+                        },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         shape = RoundedCornerShape(14.dp),
@@ -335,11 +432,20 @@ fun RegisterScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
                         },
-                        visualTransformation = PasswordVisualTransformation()
+                        visualTransformation = PasswordVisualTransformation(),
+                        isError = !isPasswordMatch
                     )
+                    if (!isPasswordMatch) {
+                        Text(
+                            text = "Konfirmasi password tidak sesuai",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp)
+                        )
+                    }
                 }
 
-                uiState.errorMessage?.let { message ->
+                displayError?.let { message ->
                     Spacer(modifier = Modifier.height(16.dp))
                     Box(
                         modifier = Modifier
@@ -360,16 +466,40 @@ fun RegisterScreen(
 
                 Button(
                     onClick = {
-                        viewModel.register(
-                            fullName = name,
-                            phoneNumber = phoneNumber,
-                            email = email,
-                            password = password,
-                            confirmPassword = confirmPassword,
-                            onSuccess = {
-                                onRegisterSuccess(normalizePhoneNumber(phoneNumber))
+                        when {
+                            nationalId.isBlank() || name.isBlank() || phoneNumber.isBlank() || email.isBlank() || password.isBlank() || confirmPassword.isBlank() -> {
+                                localError = "Semua field wajib diisi"
                             }
-                        )
+                            nationalId.length != 16 -> {
+                                localError = "NIK harus terdiri dari 16 digit"
+                            }
+                            !emailPattern.matcher(email.trim()).matches() -> {
+                                localError = "Format email tidak valid"
+                            }
+                            cleanedPhone.length !in 10..13 -> {
+                                localError = "Nomor telepon harus terdiri dari 10-13 digit angka"
+                            }
+                            password.length < 8 -> {
+                                localError = "Password minimal harus 8 karakter"
+                            }
+                            password != confirmPassword -> {
+                                localError = "Konfirmasi password tidak sesuai"
+                            }
+                            else -> {
+                                localError = null
+                                viewModel.register(
+                                    nationalId = nationalId,
+                                    fullName = name,
+                                    phoneNumber = phoneNumber,
+                                    email = email,
+                                    password = password,
+                                    confirmPassword = confirmPassword,
+                                    onSuccess = {
+                                        onRegisterSuccess(normalizePhoneNumber(phoneNumber))
+                                    }
+                                )
+                            }
+                        }
                     },
                     enabled = !uiState.isSubmitting,
                     modifier = Modifier

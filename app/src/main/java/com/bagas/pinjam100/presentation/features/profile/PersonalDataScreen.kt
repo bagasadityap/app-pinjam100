@@ -60,6 +60,7 @@ import com.bagas.pinjam100.presentation.viewmodel.customer.CustomerOnboardingUIS
 import com.bagas.pinjam100.presentation.viewmodel.wilayah.WilayahUIState
 import com.bagas.pinjam100.ui.theme.Pinjam100Theme
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -88,7 +89,22 @@ fun PersonalDataScreen(
     var showDistrictDialog by remember { mutableStateOf(false) }
     var showVillageDialog by remember { mutableStateOf(false) }
 
-    val datePickerState = rememberDatePickerState()
+    val maxAllowedTimestamp = remember {
+        Calendar.getInstance().apply {
+            add(Calendar.YEAR, -18)
+            set(Calendar.HOUR_OF_DAY, 23)
+            set(Calendar.MINUTE, 59)
+            set(Calendar.SECOND, 59)
+        }.timeInMillis
+    }
+
+    val datePickerState = rememberDatePickerState(
+        selectableDates = object : androidx.compose.material3.SelectableDates {
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis <= maxAllowedTimestamp
+            }
+        }
+    )
 
     if (showDatePicker) {
         DatePickerDialog(
@@ -224,7 +240,6 @@ fun PersonalDataScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Screen Header + Step Progress
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -271,7 +286,6 @@ fun PersonalDataScreen(
                 }
             }
 
-            // Identitas Diri Section Card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -294,18 +308,6 @@ fun PersonalDataScreen(
                                 fontSize = 15.sp
                             ),
                             color = MaterialTheme.colorScheme.onSurface
-                        )
-
-                        FormTextField(
-                            label = "NIK",
-                            value = onboardingState.nationalId,
-                            placeholder = "Masukkan NIK",
-                            leadingIcon = Icons.Default.Person,
-                            onValueChange = {
-                                if (it.length <= 16 && it.all(Char::isDigit)) {
-                                    onNationalIdChanged(it)
-                                }
-                            }
                         )
 
                         FormSelectionField(
@@ -335,7 +337,6 @@ fun PersonalDataScreen(
                 }
             }
 
-            // Alamat Domisili Section Card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -421,7 +422,6 @@ fun PersonalDataScreen(
                 }
             }
 
-            // Action Button
             item {
                 Spacer(modifier = Modifier.height(4.dp))
                 Button(

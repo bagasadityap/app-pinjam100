@@ -5,6 +5,8 @@ import retrofit2.HttpException
 import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 
 private const val HTTP_UNAUTHORIZED = 401
 private const val HTTP_FORBIDDEN = 403
@@ -40,28 +42,22 @@ private fun HttpException.toFailure(json: Json): CommonFailure {
         response()?.errorBody()?.string()
     }.getOrNull()
 
-    val parsed = body?.let {
+    // Parse string error body secara aman untuk mengambil field "message" di tingkat root
+    val serverMessage = body?.let {
         runCatching {
-            json.decodeFromString(
-                ApiEnvelope.serializer(ApiErrorDto.serializer()),
-                it
-            )
+            val jsonElement = json.parseToJsonElement(it)
+            jsonElement.jsonObject["message"]?.jsonPrimitive?.content
         }.getOrNull()
     }
 
     if (code() == HTTP_UNAUTHORIZED || code() == HTTP_FORBIDDEN) {
         return CommonFailure.Unauthorized(
-            message = parsed?.message
+            message = serverMessage
         )
     }
 
-    val error = parsed?.error
-        ?: return CommonFailure.ApiError(
-            details = listOfNotNull(parsed?.message)
-        )
-
     return CommonFailure.ApiError(
-        error.code,
-        error.details
+        code = code().toString(),
+        message = serverMessage
     )
 }
