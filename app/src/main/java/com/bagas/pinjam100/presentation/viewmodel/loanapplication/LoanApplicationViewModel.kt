@@ -2,6 +2,7 @@ package com.bagas.pinjam100.presentation.viewmodel.loanapplication
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bagas.pinjam100.core.error.AppResult
 import com.bagas.pinjam100.domain.usecase.loanapplication.CreateLoanApplicationUseCase
 import com.bagas.pinjam100.domain.usecase.loanapplication.GetCustomerLoanApplicationsUseCase
 import com.bagas.pinjam100.domain.usecase.loanapplication.GetLoanApplicationByIdUseCase
@@ -38,29 +39,33 @@ class LoanApplicationViewModel @Inject constructor(
                 )
             }
 
-            runCatching {
-                createLoanApplicationUseCase(
+            when (
+                val result = createLoanApplicationUseCase(
                     customerId = customerId,
                     loanAmount = loanAmount,
                     tenorMonths = tenorMonths,
                     purpose = purpose
                 )
-            }.onSuccess { application ->
-                _uiState.update {
-                    it.copy(
-                        createdLoanApplication = application,
-                        isSubmitting = false,
-                        errorMessage = null
-                    )
+            ) {
+                is AppResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            createdLoanApplication = result.data,
+                            isSubmitting = false,
+                            errorMessage = null
+                        )
+                    }
+
+                    onSuccess()
                 }
 
-                onSuccess()
-            }.onFailure { exception ->
-                _uiState.update {
-                    it.copy(
-                        isSubmitting = false,
-                        errorMessage = exception.message
-                    )
+                is AppResult.Failure -> {
+                    _uiState.update {
+                        it.copy(
+                            isSubmitting = false,
+                            errorMessage = "Gagal membuat aplikasi pinjaman"
+                        )
+                    }
                 }
             }
         }
@@ -75,21 +80,25 @@ class LoanApplicationViewModel @Inject constructor(
                 )
             }
 
-            runCatching {
-                getCustomerLoanApplicationsUseCase(customerId)
-            }.onSuccess { applications ->
-                _uiState.update {
-                    it.copy(
-                        loanApplications = applications,
-                        isLoading = false
-                    )
+            when (val result = getCustomerLoanApplicationsUseCase(customerId)) {
+
+                is AppResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            loanApplications = result.data,
+                            isLoading = false,
+                            errorMessage = null
+                        )
+                    }
                 }
-            }.onFailure { exception ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
-                    )
+
+                is AppResult.Failure -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = "Gagal mengambil data aplikasi pinjaman"
+                        )
+                    }
                 }
             }
         }
@@ -104,22 +113,25 @@ class LoanApplicationViewModel @Inject constructor(
                 )
             }
 
-            runCatching {
-                getLoanApplicationByIdUseCase(id)
-            }.onSuccess { application ->
-                _uiState.update {
-                    it.copy(
-                        selectedLoanApplication = application,
-                        isLoading = false,
-                        errorMessage = null
-                    )
+            when (val result = getLoanApplicationByIdUseCase(id)) {
+
+                is AppResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            selectedLoanApplication = result.data,
+                            isLoading = false,
+                            errorMessage = null
+                        )
+                    }
                 }
-            }.onFailure { exception ->
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
-                    )
+
+                is AppResult.Failure -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = "Gagal mengambil data aplikasi pinjaman"
+                        )
+                    }
                 }
             }
         }

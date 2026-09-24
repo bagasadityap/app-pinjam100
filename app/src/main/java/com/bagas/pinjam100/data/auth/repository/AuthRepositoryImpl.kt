@@ -7,6 +7,7 @@ import com.bagas.pinjam100.core.error.runApiCatching
 import com.bagas.pinjam100.data.auth.local.AuthSessionLocalDataSource
 import com.bagas.pinjam100.data.auth.remote.AuthApi
 import com.bagas.pinjam100.data.auth.remote.LoginRequest
+import com.bagas.pinjam100.data.auth.remote.RefreshTokenRequest
 import com.bagas.pinjam100.data.auth.remote.VerifyOtpRequest
 import com.bagas.pinjam100.data.auth.remote.toDomain
 import com.bagas.pinjam100.data.auth.remote.toRequest
@@ -14,6 +15,7 @@ import com.bagas.pinjam100.domain.model.auth.AuthSession
 import com.bagas.pinjam100.domain.model.auth.ChangePasswordData
 import com.bagas.pinjam100.domain.model.auth.ForgotPasswordData
 import com.bagas.pinjam100.domain.model.auth.LoginCredentials
+import com.bagas.pinjam100.domain.model.auth.LogoutData
 import com.bagas.pinjam100.domain.model.auth.RegisterData
 import com.bagas.pinjam100.domain.model.auth.ResendOtpData
 import com.bagas.pinjam100.domain.model.auth.ResetPasswordData
@@ -25,7 +27,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
-import java.util.concurrent.TimeUnit
 
 class AuthRepositoryImpl(
     private val localDataSource: AuthSessionLocalDataSource,
@@ -40,18 +41,16 @@ class AuthRepositoryImpl(
     ): AppResult<AuthSession> {
         return withContext(ioDispatcher) {
             runApiCatching(json) {
-                val envelope = remoteDataSource.login(
+                remoteDataSource.login(
                     LoginRequest(
                         phoneNumber = credentials.phoneNumber,
                         password = credentials.password,
                         fcmToken = credentials.fcmToken
                     )
                 )
-
-                envelope
                     .requirePayload()
-                    .map { payload ->
-                        payload.toDomain()
+                    .map { response ->
+                        response.toDomain()
                     }
                     .also { result ->
                         if (result is AppResult.Success) {
@@ -71,7 +70,7 @@ class AuthRepositoryImpl(
                     data.toRequest()
                 )
 
-                AppResult.Success(Unit)
+                AppResult.success(Unit)
             }
         }
     }
@@ -81,17 +80,15 @@ class AuthRepositoryImpl(
     ): AppResult<AuthSession> {
         return withContext(ioDispatcher) {
             runApiCatching(json) {
-                val envelope = remoteDataSource.verifyOtp(
+                remoteDataSource.verifyOtp(
                     VerifyOtpRequest(
                         phoneNumber = data.phoneNumber,
                         otpCode = data.otpCode
                     )
                 )
-
-                envelope
                     .requirePayload()
-                    .map { payload ->
-                        payload.toDomain()
+                    .map { response ->
+                        response.toDomain()
                     }
                     .also { result ->
                         if (result is AppResult.Success) {
@@ -125,7 +122,7 @@ class AuthRepositoryImpl(
                     data.toRequest()
                 )
 
-                AppResult.Success(Unit)
+                AppResult.success(Unit)
             }
         }
     }
@@ -139,7 +136,7 @@ class AuthRepositoryImpl(
                     data.toRequest()
                 )
 
-                AppResult.Success(Unit)
+                AppResult.success(Unit)
             }
         }
     }
@@ -153,16 +150,26 @@ class AuthRepositoryImpl(
                     data.toRequest()
                 )
 
-                AppResult.Success(Unit)
+                AppResult.success(Unit)
             }
         }
     }
 
     override suspend fun logout(): AppResult<Unit> {
         return withContext(ioDispatcher) {
+            val refreshToken = localDataSource.currentSession()?.refreshToken
+
             try {
-                remoteDataSource.logout()
-                AppResult.Success(Unit)
+                if (refreshToken.isNullOrBlank()) {
+                    AppResult.success(Unit)
+                } else {
+                    runApiCatching(json) {
+                        remoteDataSource.logout(
+                            LogoutData(refreshToken = refreshToken).toRequest()
+                        )
+                        AppResult.success(Unit)
+                    }
+                }
             } finally {
                 localDataSource.clear()
             }
@@ -181,6 +188,29 @@ class AuthRepositoryImpl(
         }
     }
 
+    override suspend fun refreshToken(
+        refreshToken: String
+    ): AppResult<AuthSession> {
+        return withContext(ioDispatcher) {
+            runApiCatching(json) {
+                remoteDataSource.refreshToken(
+                    RefreshTokenRequest(
+                        refreshToken = refreshToken
+                    )
+                )
+                    .requirePayload()
+                    .map { response ->
+                        response.toDomain()
+                    }
+                    .also { result ->
+                        if (result is AppResult.Success) {
+                            localDataSource.save(result.data)
+                        }
+                    }
+            }
+        }
+    }
+
     override fun observeSession(): Flow<AuthSession?> {
         return localDataSource
             .observe()
@@ -189,10 +219,5 @@ class AuthRepositoryImpl(
                     it.isExpiredAt(clock())
                 }
             }
-    }
-
-    companion object {
-        private val FALLBACK_SESSION_LIFETIME_MILLIS =
-            TimeUnit.HOURS.toMillis(1)
     }
 }

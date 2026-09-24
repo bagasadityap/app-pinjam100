@@ -41,7 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.bagas.pinjam100.data.document.remote.DocumentResponse
+import com.bagas.pinjam100.domain.model.document.Document
 import com.bagas.pinjam100.presentation.viewmodel.customer.CustomerOnboardingViewModel
 import com.bagas.pinjam100.presentation.viewmodel.document.DocumentViewModel
 import com.bagas.pinjam100.ui.theme.Pinjam100Theme
@@ -346,7 +346,7 @@ private fun SummarySection(
 
 @Composable
 private fun DocumentSummary(
-    documents: List<DocumentResponse>
+    documents: List<Document>
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),

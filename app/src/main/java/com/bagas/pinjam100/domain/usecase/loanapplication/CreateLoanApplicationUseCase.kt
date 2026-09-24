@@ -1,5 +1,6 @@
 package com.bagas.pinjam100.domain.usecase.loanapplication
 
+import com.bagas.pinjam100.core.error.AppResult
 import com.bagas.pinjam100.domain.model.loanapplication.LoanApplication
 import com.bagas.pinjam100.domain.repository.LoanApplicationRepository
 import javax.inject.Inject
@@ -13,7 +14,7 @@ class CreateLoanApplicationUseCase @Inject constructor(
         loanAmount: Long,
         tenorMonths: Int,
         purpose: String
-    ): LoanApplication {
+    ): AppResult<LoanApplication> {
         return repository.create(
             customerId = customerId,
             loanAmount = loanAmount,

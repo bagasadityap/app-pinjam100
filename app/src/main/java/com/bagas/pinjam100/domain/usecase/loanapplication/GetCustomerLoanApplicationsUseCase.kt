@@ -1,5 +1,6 @@
 package com.bagas.pinjam100.domain.usecase.loanapplication
 
+import com.bagas.pinjam100.core.error.AppResult
 import com.bagas.pinjam100.domain.model.loanapplication.LoanApplication
 import com.bagas.pinjam100.domain.repository.LoanApplicationRepository
 import javax.inject.Inject
@@ -10,7 +11,7 @@ class GetCustomerLoanApplicationsUseCase @Inject constructor(
 
     suspend operator fun invoke(
         customerId: String
-    ): List<LoanApplication> {
+    ): AppResult<List<LoanApplication>> {
         return repository.getByCustomer(customerId)
     }
 }

@@ -43,6 +43,9 @@ data object GuestGraph : AppRoute
 data object GuestHomeRoute : AppRoute
 
 @Serializable
+data object GuestHelpRoute : AppRoute
+
+@Serializable
 data object HomeGraph : AppRoute
 
 @Serializable
@@ -129,10 +132,14 @@ data object TransactionGraph : AppRoute
 data object TransactionRoute : AppRoute
 
 @Serializable
-data object TransactionDisbursementDetailRoute : AppRoute
+data class TransactionDisbursementDetailRoute(
+    val id: String
+) : AppRoute
 
 @Serializable
-data object TransactionInstallmentDetailRoute : AppRoute
+data class TransactionInstallmentDetailRoute(
+    val id: String
+) : AppRoute
 
 @Serializable
 data object NotificationRoute : AppRoute
@@ -142,6 +149,9 @@ data object ProfileGraph : AppRoute
 
 @Serializable
 data object ProfileRoute : AppRoute
+
+@Serializable
+data object PersonalDataSettingRoute : AppRoute
 
 @Serializable
 data object HelpGraph : AppRoute

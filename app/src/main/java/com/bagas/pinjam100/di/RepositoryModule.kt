@@ -1,12 +1,14 @@
 package com.bagas.pinjam100.di
 
 import com.bagas.pinjam100.data.customer.repository.CustomerRepositoryImpl
+import com.bagas.pinjam100.data.disbursement.repository.DisbursementRepositoryImpl
 import com.bagas.pinjam100.data.document.repository.DocumentRepositoryImpl
 import com.bagas.pinjam100.data.installment.repository.LoanInstallmentRepositoryImpl
 import com.bagas.pinjam100.data.limit.repository.LimitRepositoryImpl
 import com.bagas.pinjam100.data.loanapplication.repository.LoanApplicationRepositoryImpl
 import com.bagas.pinjam100.data.transaction.repository.TransactionHistoryRepositoryImpl
 import com.bagas.pinjam100.domain.repository.CustomerRepository
+import com.bagas.pinjam100.domain.repository.DisbursementRepository
 import com.bagas.pinjam100.domain.repository.DocumentRepository
 import com.bagas.pinjam100.domain.repository.LimitRepository
 import com.bagas.pinjam100.domain.repository.LoanApplicationRepository
@@ -57,4 +59,10 @@ abstract class RepositoryModule {
     abstract fun bindTransactioHistoryRepository(
         repository: TransactionHistoryRepositoryImpl
     ): TransactionHistoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindDisbursementRepository(
+        repository: DisbursementRepositoryImpl
+    ): DisbursementRepository
 }

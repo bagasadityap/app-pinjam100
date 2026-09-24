@@ -154,9 +154,6 @@ fun HomeScreen(
                         onLoanClick = {
                             navController.navigate(LoanApplicationRoute)
                         },
-                        onProductClick = {
-                            navController.navigate(ProductListRoute)
-                        },
                         onSimulationClick = {
                             navController.navigate(LoanSimulationRoute)
                         }
@@ -549,11 +546,10 @@ private fun VerificationCard() {
     }
 }
 
-// LAYANAN UTAMA ASLI (6 SERVICECARD: 2 KOLOM x 3 BARIS)
+// LAYANAN HANYA 4 (Pengajuan, Simulasi, Pembayaran, Bantuan)
 @Composable
 private fun ServiceSection(
     onLoanClick: () -> Unit,
-    onProductClick: () -> Unit,
     onSimulationClick: () -> Unit
 ) {
     Column(
@@ -582,32 +578,11 @@ private fun ServiceSection(
 
             ServiceCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.AccountBalance,
-                title = "Produk",
-                description = "Pilihan pinjaman",
-                onClick = onProductClick
-            )
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            ServiceCard(
-                modifier = Modifier.weight(1f),
                 icon = Icons.Filled.Calculate,
                 title = "Simulasi",
                 description = "Hitung cicilan",
                 onClick = onSimulationClick
             )
-
-            ServiceCard(
-                modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Payments,
-                title = "Pembayaran",
-                description = "Bayar tagihan",
-                onClick = {}
-            )
         }
 
         Row(
@@ -616,9 +591,9 @@ private fun ServiceSection(
         ) {
             ServiceCard(
                 modifier = Modifier.weight(1f),
-                icon = Icons.Filled.Info,
-                title = "Informasi",
-                description = "Tentang layanan",
+                icon = Icons.Filled.Payments,
+                title = "Pembayaran",
+                description = "Bayar tagihan",
                 onClick = {}
             )
 
@@ -791,7 +766,7 @@ private fun PromoCard(
 
                 Text(
                     text = when (promo.title) {
-                        "Promo Pinjaman Spesial" -> "Bunga spesial mulai 0,3% per hari."
+                        "Promo Pinjaman Spesial" -> "Bunga spesial mulai 0,1% per hari."
                         "Limit Lebih Besar" -> "Kesempatan limit pinjaman lebih besar."
                         else -> "Dapatkan penawaran menarik dari Pinjam100."
                     },

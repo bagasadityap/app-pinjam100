@@ -1,6 +1,5 @@
 package com.bagas.pinjam100.presentation.features.loan
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -19,18 +17,25 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ReceiptLong
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.bagas.pinjam100.domain.model.installment.InstallmentStatus
+import com.bagas.pinjam100.presentation.viewmodel.installment.LoanInstallmentViewModel
 import com.bagas.pinjam100.ui.theme.Pinjam100Theme
 
 private val PrimaryBlue = Color(0xFF0E209C)
@@ -40,48 +45,97 @@ private val FormShape = RoundedCornerShape(14.dp)
 
 @Composable
 fun TransactionInstallmentDetailScreen(
-    onBack: () -> Unit = {}
+    installmentId: String,
+    onBack: () -> Unit = {},
+    viewModel: LoanInstallmentViewModel = hiltViewModel()
 ) {
+    val uiState by viewModel.uiState.collectAsState()
+
+    LaunchedEffect(installmentId) {
+        viewModel.getById(installmentId)
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         containerColor = MaterialTheme.colorScheme.background
     ) { innerPadding ->
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .statusBarsPadding()
-                .navigationBarsPadding()
-                .padding(horizontal = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(14.dp)
-        ) {
-            item {
-                TransactionDetailHeader(
-                    onBack = onBack
-                )
+        when {
+            uiState.isLoading -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .navigationBarsPadding(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    CircularProgressIndicator(
+                        color = PrimaryBlue
+                    )
+                }
             }
 
-            item {
-                InstallmentPaymentAmountCard()
+            uiState.selectedInstallment != null -> {
+                val installment = uiState.selectedInstallment!!
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp),
+                    verticalArrangement = Arrangement.spacedBy(14.dp)
+                ) {
+                    item {
+                        TransactionDetailHeader(
+                            onBack = onBack
+                        )
+                    }
+
+                    item {
+                        InstallmentPaymentAmountCard(
+                            installment = installment
+                        )
+                    }
+
+                    item {
+                        TransactionInformationCard(
+                            installment = installment
+                        )
+                    }
+
+                    item {
+                        InstallmentInformationCard(
+                            installment = installment
+                        )
+                    }
+
+                    item {
+                        Spacer(
+                            modifier = Modifier.height(6.dp)
+                        )
+                    }
+                }
             }
 
-            item {
-                TransactionInformationCard()
-            }
-
-            item {
-                InstallmentInformationCard()
-            }
-
-            item {
-                PaymentInformationCard()
-            }
-
-            item {
-                Spacer(
-                    modifier = Modifier.height(6.dp)
-                )
+            else -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(innerPadding)
+                        .navigationBarsPadding()
+                        .padding(horizontal = 20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = uiState.errorMessage
+                            ?: "Data angsuran tidak ditemukan",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }
@@ -94,7 +148,7 @@ private fun TransactionDetailHeader(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp),
+            .padding(top = 4.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         IconButton(
@@ -125,7 +179,11 @@ private fun TransactionDetailHeader(
 }
 
 @Composable
-private fun InstallmentPaymentAmountCard() {
+private fun InstallmentPaymentAmountCard(
+    installment: com.bagas.pinjam100.domain.model.installment.LoanInstallment
+) {
+    val isPaid = installment.status == InstallmentStatus.PAID
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = FormShape,
@@ -160,7 +218,7 @@ private fun InstallmentPaymentAmountCard() {
             )
 
             Text(
-                text = "Rp875.000",
+                text = formatRupiah(installment.paidAmount),
                 style = MaterialTheme.typography.headlineSmall,
                 color = Color.White,
                 fontWeight = FontWeight.Bold
@@ -179,12 +237,8 @@ private fun InstallmentPaymentAmountCard() {
                     tint = Color.White
                 )
 
-                Spacer(
-                    modifier = Modifier.height(0.dp)
-                )
-
                 Text(
-                    text = "Berhasil",
+                    text = if (isPaid) "Berhasil" else installment.status.name,
                     modifier = Modifier.padding(start = 5.dp),
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White,
@@ -196,7 +250,9 @@ private fun InstallmentPaymentAmountCard() {
 }
 
 @Composable
-private fun TransactionInformationCard() {
+private fun TransactionInformationCard(
+    installment: com.bagas.pinjam100.domain.model.installment.LoanInstallment
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = FormShape,
@@ -218,12 +274,12 @@ private fun TransactionInformationCard() {
 
             DetailItem(
                 label = "Nomor Transaksi",
-                value = "TRX-20260909-0002"
+                value = installment.id
             )
 
             DetailItem(
                 label = "Tanggal Transaksi",
-                value = "09 September 2026, 14:30"
+                value = installment.paidDate ?: "-"
             )
 
             DetailItem(
@@ -233,15 +289,25 @@ private fun TransactionInformationCard() {
 
             DetailItem(
                 label = "Status",
-                value = "Berhasil",
-                valueColor = Success
+                value = if (installment.status == InstallmentStatus.PAID) {
+                    "Berhasil"
+                } else {
+                    installment.status.name
+                },
+                valueColor = if (installment.status == InstallmentStatus.PAID) {
+                    Success
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                }
             )
         }
     }
 }
 
 @Composable
-private fun InstallmentInformationCard() {
+private fun InstallmentInformationCard(
+    installment: com.bagas.pinjam100.domain.model.installment.LoanInstallment
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = FormShape,
@@ -263,76 +329,32 @@ private fun InstallmentInformationCard() {
 
             DetailItem(
                 label = "Nomor Pinjaman",
-                value = "LN-20260909-0001"
+                value = installment.loanApplicationId
             )
 
             DetailItem(
                 label = "Angsuran Ke",
-                value = "1 dari 12"
+                value = "${installment.installmentSequence}"
             )
 
             DetailItem(
-                label = "Pokok",
-                value = "Rp750.000"
+                label = "Jumlah Angsuran",
+                value = formatRupiah(installment.installmentAmount)
             )
 
             DetailItem(
-                label = "Bunga",
-                value = "Rp125.000"
-            )
-
-            DetailItem(
-                label = "Total Angsuran",
-                value = "Rp875.000"
+                label = "Jumlah Dibayar",
+                value = formatRupiah(installment.paidAmount)
             )
 
             DetailItem(
                 label = "Jatuh Tempo",
-                value = "10 September 2026"
-            )
-        }
-    }
-}
-
-@Composable
-private fun PaymentInformationCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = FormShape,
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        )
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Text(
-                text = "Informasi Pembayaran",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                value = installment.dueDate
             )
 
             DetailItem(
-                label = "Metode Pembayaran",
-                value = "Virtual Account"
-            )
-
-            DetailItem(
-                label = "Bank",
-                value = "BCA"
-            )
-
-            DetailItem(
-                label = "Nomor Virtual Account",
-                value = "1234567890123456"
-            )
-
-            DetailItem(
-                label = "Keterangan",
-                value = "Pembayaran angsuran berhasil diterima."
+                label = "Status",
+                value = installment.status.name
             )
         }
     }
@@ -366,10 +388,18 @@ private fun DetailItem(
     }
 }
 
+private fun formatRupiah(amount: Double): String {
+    return "Rp${"%,.0f".format(amount).replace(',', '.')}"
+}
+
 @Preview(showBackground = true)
 @Composable
 private fun TransactionInstallmentDetailScreenPreview() {
     Pinjam100Theme {
-        TransactionInstallmentDetailScreen()
+        Column(
+            modifier = Modifier.padding(20.dp)
+        ) {
+            Text("Transaction Installment Detail")
+        }
     }
 }

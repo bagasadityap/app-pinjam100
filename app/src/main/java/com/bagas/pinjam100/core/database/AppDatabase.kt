@@ -11,6 +11,8 @@ import com.bagas.pinjam100.data.customer.local.CustomerEntity
 import com.bagas.pinjam100.data.document.local.DocumentEntity
 import com.bagas.pinjam100.data.loanapplication.local.LoanApplicationEntity
 import com.bagas.pinjam100.data.installment.local.LoanInstallmentEntity
+import com.bagas.pinjam100.data.limit.local.LimitDao
+import com.bagas.pinjam100.data.limit.local.LimitEntity
 import com.bagas.pinjam100.data.rekening.local.RekeningEntity
 import com.bagas.pinjam100.data.transaction.local.TransactionHistoryDao
 import com.bagas.pinjam100.data.transaction.local.TransactionHistoryEntity
@@ -22,7 +24,8 @@ import com.bagas.pinjam100.data.transaction.local.TransactionHistoryEntity
         RekeningEntity::class,
         LoanApplicationEntity::class,
         LoanInstallmentEntity::class,
-        TransactionHistoryEntity::class
+        TransactionHistoryEntity::class,
+        LimitEntity::class
     ],
     version = 1,
     exportSchema = true
@@ -34,6 +37,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun loanApplicationDao(): LoanApplicationDao
     abstract fun loanInstallmentDao(): LoanInstallmentDao
     abstract fun transactionHistoryDao(): TransactionHistoryDao
+    abstract fun limitDao(): LimitDao
 
     companion object {
         const val NAME = "pinjam100.db"

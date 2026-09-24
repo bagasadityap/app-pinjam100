@@ -43,8 +43,15 @@ interface AuthApi {
     ): ApiEnvelope<Unit>
 
     @POST("api/auth/customer/logout")
-    suspend fun logout()
+    suspend fun logout(
+        @Body body: LogoutRequest
+    )
 
     @DELETE("api/auth/customer/account")
     suspend fun deleteAccount(): ApiEnvelope<Unit>
+
+    @POST("api/auth/customer/refresh")
+    suspend fun refreshToken(
+        @Body body: RefreshTokenRequest
+    ): ApiEnvelope<LoginResponse>
 }

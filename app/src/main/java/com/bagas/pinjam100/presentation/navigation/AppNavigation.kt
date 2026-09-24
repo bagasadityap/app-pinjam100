@@ -48,6 +48,7 @@ import androidx.navigation.compose.navigation
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
+import com.bagas.pinjam100.domain.model.customer.CustomerOnboarding
 import com.bagas.pinjam100.presentation.features.auth.AuthScreen
 import com.bagas.pinjam100.presentation.features.auth.ChangePasswordScreen
 import com.bagas.pinjam100.presentation.features.auth.ForgotPasswordScreen
@@ -55,6 +56,7 @@ import com.bagas.pinjam100.presentation.features.auth.LoginScreen
 import com.bagas.pinjam100.presentation.features.auth.OtpScreen
 import com.bagas.pinjam100.presentation.features.auth.RegisterScreen
 import com.bagas.pinjam100.presentation.features.auth.ResetPasswordScreen
+import com.bagas.pinjam100.presentation.features.guest.GuestHelpScreen
 import com.bagas.pinjam100.presentation.features.guest.GuestHomeScreen
 import com.bagas.pinjam100.presentation.features.home.HelpScreen
 import com.bagas.pinjam100.presentation.features.home.HistoryScreen
@@ -63,6 +65,8 @@ import com.bagas.pinjam100.presentation.features.installment.LoanInstallmentBill
 import com.bagas.pinjam100.presentation.features.loan.ApplicationListScreen
 import com.bagas.pinjam100.presentation.features.loan.LoanApplicationDetailScreen
 import com.bagas.pinjam100.presentation.features.loan.LoanApplicationScreen
+import com.bagas.pinjam100.presentation.features.loan.TransactionDisbursementDetailScreen
+import com.bagas.pinjam100.presentation.features.loan.TransactionInstallmentDetailScreen
 import com.bagas.pinjam100.presentation.features.notification.NotificationScreen
 import com.bagas.pinjam100.presentation.features.profile.AboutScreen
 import com.bagas.pinjam100.presentation.features.profile.BankAccountDataScreen
@@ -70,6 +74,7 @@ import com.bagas.pinjam100.presentation.features.profile.EmploymentDataScreen
 import com.bagas.pinjam100.presentation.features.profile.IdentityCardScreen
 import com.bagas.pinjam100.presentation.features.profile.IdentityCardVerificationScreen
 import com.bagas.pinjam100.presentation.features.profile.PersonalDataScreen
+import com.bagas.pinjam100.presentation.features.profile.PersonalDataSettingScreen
 import com.bagas.pinjam100.presentation.features.profile.ProfileScreen
 import com.bagas.pinjam100.presentation.features.profile.SelfieScreen
 import com.bagas.pinjam100.presentation.features.profile.SummaryScreen
@@ -77,6 +82,8 @@ import com.bagas.pinjam100.presentation.features.simulation.SimulationScreen
 import com.bagas.pinjam100.presentation.viewmodel.auth.AuthUiState
 import com.bagas.pinjam100.presentation.viewmodel.auth.AuthViewModel
 import com.bagas.pinjam100.presentation.viewmodel.customer.CustomerOnboardingViewModel
+import com.bagas.pinjam100.presentation.viewmodel.customer.CustomerViewModel
+import com.bagas.pinjam100.presentation.viewmodel.disbursement.DisbursementViewModel
 import com.bagas.pinjam100.presentation.viewmodel.document.DocumentViewModel
 import com.bagas.pinjam100.presentation.viewmodel.installment.LoanInstallmentViewModel
 import com.bagas.pinjam100.presentation.viewmodel.limit.LimitViewModel
@@ -165,8 +172,10 @@ fun AppNavHost(
             resetPasswordGraph(
                 navController = navController
             )
-            
-            guestGraph()
+
+            guestGraph(
+                navController = navController
+            )
 
             onboardingGraph(
                 navController = navController,
@@ -178,7 +187,9 @@ fun AppNavHost(
                 authState = authState
             )
 
-            transactionGraph()
+            transactionGraph(
+                navController = navController
+            )
 
             loanGraph(
                 navController = navController
@@ -191,7 +202,6 @@ fun AppNavHost(
             )
 
             notificationGraph()
-            productGraph()
             simulationGraph()
         }
     }
@@ -433,12 +443,22 @@ fun NavGraphBuilder.resetPasswordGraph(
     }
 }
 
-fun NavGraphBuilder.guestGraph() {
+fun NavGraphBuilder.guestGraph(
+    navController: NavHostController
+) {
     navigation<GuestGraph>(
         startDestination = GuestHomeRoute
     ) {
         composable<GuestHomeRoute> {
-            GuestHomeScreen()
+            GuestHomeScreen(
+                navController = navController
+            )
+        }
+
+        composable<GuestHelpRoute> {
+            GuestHelpScreen(
+                navController = navController
+            )
         }
     }
 }
@@ -710,7 +730,9 @@ fun NavGraphBuilder.homeGraph(
     }
 }
 
-fun NavGraphBuilder.transactionGraph() {
+fun NavGraphBuilder.transactionGraph(
+    navController: NavHostController
+) {
     navigation<TransactionGraph>(
         startDestination = TransactionRoute
     ) {
@@ -722,15 +744,60 @@ fun NavGraphBuilder.transactionGraph() {
 
             if (customerId != null) {
                 HistoryScreen(
-                    customerId = customerId
+                    customerId = customerId,
+                    onDisbursementClick = { id ->
+                        navController.navigate(
+                            TransactionDisbursementDetailRoute(id)
+                        )
+                    },
+                    onInstallmentClick = { id ->
+                        navController.navigate(
+                            TransactionInstallmentDetailRoute(id)
+                        )
+                    }
                 )
             }
         }
 
-        composable<TransactionDisbursementDetailRoute> {
+        composable<TransactionDisbursementDetailRoute>(
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "pinjam100://disbursement/{id}"
+                }
+            )
+        ) { backStackEntry ->
+
+            val route = backStackEntry.toRoute<TransactionDisbursementDetailRoute>()
+            val viewModel: DisbursementViewModel = hiltViewModel()
+
+            LaunchedEffect(route.id) {
+                viewModel.getById(route.id)
+            }
+
+            TransactionDisbursementDetailScreen(
+                viewModel = viewModel,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
 
-        composable<TransactionInstallmentDetailRoute> {
+        composable<TransactionInstallmentDetailRoute>(
+            deepLinks = listOf(
+                navDeepLink {
+                    uriPattern = "pinjam100://installment/{id}"
+                }
+            )
+        ) { backStackEntry ->
+
+            val route = backStackEntry.toRoute<TransactionInstallmentDetailRoute>()
+
+            TransactionInstallmentDetailScreen(
+                installmentId = route.id,
+                onBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
@@ -836,48 +903,12 @@ fun NavGraphBuilder.loanGraph(
                 )
             }
         }
-
-        composable<LoanApplicationStatusRoute> {
-        }
-
-        composable<LoanApprovalRoute> {
-        }
-
-        composable<DisbursementRoute> {
-        }
-
-        composable<DisbursementSuccessRoute> {
-        }
-
-        composable<ActiveLoanRoute> {
-        }
-
-        composable<InstallmentScheduleRoute> {
-        }
-
-        composable<InstallmentPaymentRoute> {
-        }
-
-        composable<InstallmentPaymentSuccessRoute> {
-        }
     }
 }
 
 fun NavGraphBuilder.notificationGraph() {
     composable<NotificationRoute> {
         NotificationScreen()
-    }
-}
-
-fun NavGraphBuilder.productGraph() {
-    navigation<ProductGraph>(
-        startDestination = ProductListRoute
-    ) {
-        composable<ProductListRoute> {
-        }
-
-        composable<ProductDetailRoute> {
-        }
     }
 }
 
@@ -909,6 +940,9 @@ fun NavGraphBuilder.profileGraph(
     ) {
         composable<ProfileRoute> {
             ProfileScreen(
+                onPersonalDataSetting = {
+                    navController.navigate(PersonalDataSettingRoute)
+                },
                 onChangePassword = {
                     navController.navigate(ChangePasswordRoute)
                 },
@@ -925,6 +959,27 @@ fun NavGraphBuilder.profileGraph(
                         }
                         launchSingleTop = true
                     }
+                }
+            )
+        }
+
+        composable<PersonalDataSettingRoute> {
+            val customerViewModel: CustomerViewModel = hiltViewModel()
+            val uiState by customerViewModel.detailUiState.collectAsStateWithLifecycle()
+            val authViewModel: AuthViewModel = hiltViewModel()
+            val authState by authViewModel.uiState.collectAsStateWithLifecycle()
+            val customerId = authState.user?.id
+
+            LaunchedEffect(customerId) {
+                if (!customerId.isNullOrEmpty()) {
+                    customerViewModel.getDetailById(customerId)
+                }
+            }
+
+            PersonalDataSettingScreen(
+                uiState = uiState,
+                onBack = {
+                    navController.popBackStack()
                 }
             )
         }

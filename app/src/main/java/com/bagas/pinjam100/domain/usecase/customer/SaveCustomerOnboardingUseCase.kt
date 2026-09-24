@@ -1,5 +1,6 @@
 package com.bagas.pinjam100.domain.usecase.customer
 
+import com.bagas.pinjam100.core.error.AppResult
 import com.bagas.pinjam100.domain.model.customer.Customer
 import com.bagas.pinjam100.domain.model.customer.CustomerOnboarding
 import com.bagas.pinjam100.domain.repository.CustomerRepository
@@ -12,7 +13,7 @@ class SaveCustomerOnboardingUseCase @Inject constructor(
     suspend operator fun invoke(
         customerId: String,
         request: CustomerOnboarding
-    ): Customer {
+    ): AppResult<Customer> {
         return customerRepository.saveOnboarding(
             id = customerId,
             request = request

@@ -12,7 +12,7 @@ interface CustomerApi {
     @GET("api/customer/{id}/detail")
     suspend fun getDetailById(
         @Path("id") id: String
-    ): ApiEnvelope<CustomerResponse>
+    ): ApiEnvelope<CustomerDetailResponse>
 
     @POST("api/customer/{id}/onboarding")
     suspend fun saveOnboarding(

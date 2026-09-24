@@ -2,6 +2,7 @@ package com.bagas.pinjam100.presentation.viewmodel.document
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bagas.pinjam100.core.error.AppResult
 import com.bagas.pinjam100.domain.repository.DocumentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,29 +36,40 @@ class DocumentViewModel @Inject constructor(
                 )
             }
 
-            try {
-                val document = documentRepository.save(
+            when (
+                val result = documentRepository.save(
                     file = file,
                     type = type,
                     customerId = customerId
                 )
+            ) {
+                is AppResult.Success -> {
+                    val document = result.data
 
-                _uiState.update {
-                    it.copy(
-                        documents = it.documents
-                            .filterNot { existing -> existing.id == document.id }
-                            .filterNot { existing -> existing.type == document.type }
-                            .plus(document),
-                        isUploading = false,
-                        successMessage = "Dokumen berhasil diunggah"
-                    )
+                    _uiState.update {
+                        it.copy(
+                            documents = it.documents
+                                .filterNot { existing ->
+                                    existing.id == document.id
+                                }
+                                .filterNot { existing ->
+                                    existing.type == document.type
+                                }
+                                .plus(document),
+                            isUploading = false,
+                            errorMessage = null,
+                            successMessage = "Dokumen berhasil diunggah"
+                        )
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isUploading = false,
-                        errorMessage = e.message ?: "Gagal mengunggah dokumen"
-                    )
+
+                is AppResult.Failure -> {
+                    _uiState.update {
+                        it.copy(
+                            isUploading = false,
+                            errorMessage = "Gagal mengunggah dokumen"
+                        )
+                    }
                 }
             }
         }
@@ -73,32 +85,42 @@ class DocumentViewModel @Inject constructor(
                 )
             }
 
-            try {
-                documentRepository.delete(id)
+            when (val result = documentRepository.delete(id)) {
 
-                _uiState.update {
-                    it.copy(
-                        documents = it.documents.filterNot { document -> document.id == id },
-                        isDeleting = false,
-                        successMessage = "Dokumen berhasil dihapus"
-                    )
+                is AppResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            documents = it.documents.filterNot { document ->
+                                document.id == id
+                            },
+                            isDeleting = false,
+                            errorMessage = null,
+                            successMessage = "Dokumen berhasil dihapus"
+                        )
+                    }
                 }
-            } catch (e: Exception) {
-                _uiState.update {
-                    it.copy(
-                        isDeleting = false,
-                        errorMessage = e.message ?: "Gagal menghapus dokumen"
-                    )
+
+                is AppResult.Failure -> {
+                    _uiState.update {
+                        it.copy(
+                            isDeleting = false,
+                            errorMessage = "Gagal menghapus dokumen"
+                        )
+                    }
                 }
             }
         }
     }
 
     fun clearError() {
-        _uiState.update { it.copy(errorMessage = null) }
+        _uiState.update {
+            it.copy(errorMessage = null)
+        }
     }
 
     fun clearSuccess() {
-        _uiState.update { it.copy(successMessage = null) }
+        _uiState.update {
+            it.copy(successMessage = null)
+        }
     }
 }

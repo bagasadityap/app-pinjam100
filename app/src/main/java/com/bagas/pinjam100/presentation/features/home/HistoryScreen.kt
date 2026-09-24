@@ -1,6 +1,7 @@
 package com.bagas.pinjam100.presentation.features.home
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -45,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -63,6 +63,8 @@ import java.util.Locale
 @Composable
 fun HistoryScreen(
     customerId: String,
+    onDisbursementClick: (String) -> Unit,
+    onInstallmentClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: TransactionHistoryViewModel = hiltViewModel()
 ) {
@@ -148,19 +150,25 @@ fun HistoryScreen(
                     HistoryFilterChip(
                         selected = selectedType == "Semua",
                         text = "Semua",
-                        onClick = { selectedType = "Semua" }
+                        onClick = {
+                            selectedType = "Semua"
+                        }
                     )
 
                     HistoryFilterChip(
                         selected = selectedType == "Pencairan",
                         text = "Pencairan",
-                        onClick = { selectedType = "Pencairan" }
+                        onClick = {
+                            selectedType = "Pencairan"
+                        }
                     )
 
                     HistoryFilterChip(
                         selected = selectedType == "Pembayaran",
                         text = "Pembayaran",
-                        onClick = { selectedType = "Pembayaran" }
+                        onClick = {
+                            selectedType = "Pembayaran"
+                        }
                     )
                 }
 
@@ -287,7 +295,20 @@ fun HistoryScreen(
                     items = filteredTransactions,
                     key = { it.id }
                 ) { transaction ->
-                    TransactionItem(transaction)
+                    TransactionItem(
+                        transaction = transaction,
+                        onClick = {
+                            when (transaction.type) {
+                                TransactionType.DISBURSEMENT -> {
+                                    onDisbursementClick(transaction.id)
+                                }
+
+                                TransactionType.INSTALLMENT_PAYMENT -> {
+                                    onInstallmentClick(transaction.id)
+                                }
+                            }
+                        }
+                    )
                 }
             }
         }
@@ -395,12 +416,17 @@ fun HistoryScreen(
                         } else {
                             "Pilih Tanggal"
                         }
+
                         Text(
                             text = headlineText,
                             style = MaterialTheme.typography.titleMedium.copy(
                                 fontWeight = FontWeight.Bold
                             ),
-                            modifier = Modifier.padding(start = 24.dp, top = 12.dp, bottom = 4.dp)
+                            modifier = Modifier.padding(
+                                start = 24.dp,
+                                top = 12.dp,
+                                bottom = 4.dp
+                            )
                         )
                     },
                     colors = androidx.compose.material3.DatePickerDefaults.colors(
@@ -452,7 +478,8 @@ private fun HistoryFilterChip(
 
 @Composable
 private fun TransactionItem(
-    transaction: TransactionHistory
+    transaction: TransactionHistory,
+    onClick: () -> Unit
 ) {
     val isIncome = transaction.type == TransactionType.DISBURSEMENT
 
@@ -468,7 +495,9 @@ private fun TransactionItem(
     val date = formatTransactionDate(transaction.date)
 
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         shape = RoundedCornerShape(14.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp
@@ -633,14 +662,4 @@ private fun formatRupiah(amount: BigDecimal): String {
     }
 
     return "Rp${formatter.format(amount)}"
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun HistoryScreenPreview() {
-    Pinjam100Theme {
-        HistoryScreen(
-            customerId = "preview-customer-id"
-        )
-    }
 }

@@ -74,6 +74,7 @@ fun ProfileScreen(
     modifier: Modifier = Modifier,
     viewModel: AuthViewModel = hiltViewModel(),
     onRefresh: () -> Unit = {},
+    onPersonalDataSetting: () -> Unit = {},
     onLogout: () -> Unit = {},
     onChangePassword: () -> Unit = {},
     onHelp: () -> Unit = {},
@@ -91,7 +92,8 @@ fun ProfileScreen(
             ProfileMenu(
                 icon = Icons.Filled.Person,
                 title = "Data Diri",
-                description = "Kelola informasi pribadi"
+                description = "Kelola informasi pribadi",
+                onClick = onPersonalDataSetting
             ),
             ProfileMenu(
                 icon = Icons.Filled.Lock,

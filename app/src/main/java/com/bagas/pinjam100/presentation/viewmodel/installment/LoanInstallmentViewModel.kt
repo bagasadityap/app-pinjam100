@@ -2,6 +2,7 @@ package com.bagas.pinjam100.presentation.viewmodel.installment
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bagas.pinjam100.core.error.AppResult
 import com.bagas.pinjam100.domain.model.installment.InstallmentStatus
 import com.bagas.pinjam100.domain.repository.LoanInstallmentRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,20 +28,20 @@ class LoanInstallmentViewModel @Inject constructor(
                 errorMessage = null
             )
 
-            try {
-                val installment = repository.getById(id)
+            when (val result = repository.getById(id)) {
+                is AppResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        selectedInstallment = result.data,
+                        isLoading = false
+                    )
+                }
 
-                _uiState.value = _uiState.value.copy(
-                    selectedInstallment = installment,
-                    isLoading = false
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = "Gagal mengambil data angsuran"
-                )
+                is AppResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Gagal mengambil data angsuran"
+                    )
+                }
             }
         }
     }
@@ -52,22 +53,20 @@ class LoanInstallmentViewModel @Inject constructor(
                 errorMessage = null
             )
 
-            try {
-                val installments = repository.getByLoanApplicationId(
-                    loanApplicationId
-                )
+            when (val result = repository.getByLoanApplicationId(loanApplicationId)) {
+                is AppResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        installments = result.data,
+                        isLoading = false
+                    )
+                }
 
-                _uiState.value = _uiState.value.copy(
-                    installments = installments,
-                    isLoading = false
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = "Gagal mengambil data angsuran"
-                )
+                is AppResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Gagal mengambil data angsuran"
+                    )
+                }
             }
         }
     }
@@ -79,40 +78,42 @@ class LoanInstallmentViewModel @Inject constructor(
                 errorMessage = null
             )
 
-            try {
-                val installments = repository.getByCustomerId(customerId)
+            when (val result = repository.getByCustomerId(customerId)) {
+                is AppResult.Success -> {
+                    val today = LocalDate.now()
+                    val maxDate = today.plusDays(30)
 
-                val today = LocalDate.now()
-                val maxDate = today.plusDays(30)
-
-                val result = installments
-                    .asSequence()
-                    .filter {
-                        it.status == InstallmentStatus.UNPAID
-                    }
-                    .filter {
-                        try {
-                            val dueDate = LocalDate.parse(it.dueDate)
-                            dueDate <= maxDate
-                        } catch (_: Exception) {
-                            false
+                    val installments = result.data
+                        .asSequence()
+                        .filter {
+                            it.status == InstallmentStatus.UNPAID
                         }
-                    }
-                    .distinctBy { it.id }
-                    .sortedBy {
-                        LocalDate.parse(it.dueDate)
-                    }
-                    .toList()
+                        .filter {
+                            try {
+                                val dueDate = LocalDate.parse(it.dueDate)
+                                dueDate <= maxDate
+                            } catch (_: Exception) {
+                                false
+                            }
+                        }
+                        .distinctBy { it.id }
+                        .sortedBy {
+                            LocalDate.parse(it.dueDate)
+                        }
+                        .toList()
 
-                _uiState.value = _uiState.value.copy(
-                    installments = result,
-                    isLoading = false
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message ?: "Gagal memuat tagihan"
-                )
+                    _uiState.value = _uiState.value.copy(
+                        installments = installments,
+                        isLoading = false
+                    )
+                }
+
+                is AppResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(
+                        isLoading = false,
+                        errorMessage = "Gagal memuat tagihan"
+                    )
+                }
             }
         }
     }
@@ -128,22 +129,22 @@ class LoanInstallmentViewModel @Inject constructor(
                 paymentSuccess = false
             )
 
-            try {
-                repository.pay(id)
+            when (repository.pay(id)) {
+                is AppResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        isPaying = false,
+                        paymentSuccess = true
+                    )
 
-                getByCustomerId(customerId)
+                    getByCustomerId(customerId)
+                }
 
-                _uiState.value = _uiState.value.copy(
-                    isPaying = false,
-                    paymentSuccess = true
-                )
-            } catch (e: Exception) {
-                e.printStackTrace()
-
-                _uiState.value = _uiState.value.copy(
-                    isPaying = false,
-                    errorMessage = e.message ?: "Gagal melakukan pembayaran"
-                )
+                is AppResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(
+                        isPaying = false,
+                        errorMessage = "Gagal melakukan pembayaran"
+                    )
+                }
             }
         }
     }

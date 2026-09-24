@@ -650,7 +650,7 @@ private fun LoanStatus.contentColor(): Color {
     }
 }
 
-private fun formatRupiah(
+fun formatRupiah(
     amount: BigDecimal
 ): String {
     return NumberFormat

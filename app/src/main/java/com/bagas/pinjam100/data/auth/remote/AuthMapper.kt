@@ -5,6 +5,7 @@ import com.bagas.pinjam100.domain.model.auth.AuthUser
 import com.bagas.pinjam100.domain.model.auth.ChangePasswordData
 import com.bagas.pinjam100.domain.model.auth.ForgotPasswordData
 import com.bagas.pinjam100.domain.model.auth.LoginCredentials
+import com.bagas.pinjam100.domain.model.auth.LogoutData
 import com.bagas.pinjam100.domain.model.auth.RegisterData
 import com.bagas.pinjam100.domain.model.auth.ResendOtpData
 import com.bagas.pinjam100.domain.model.auth.ResetPasswordData
@@ -19,6 +20,7 @@ fun LoginCredentials.toRequest() = LoginRequest(
 fun LoginResponse.toDomain() = AuthSession(
     user = user?.toDomain(),
     accessToken = token,
+    refreshToken = refreshToken,
     expiresAtMillis = expiresAtMillis
 )
 
@@ -60,4 +62,8 @@ fun ResetPasswordData.toRequest() = ResetPasswordRequest(
 fun ChangePasswordData.toRequest() = ChangePasswordRequest(
     currentPassword = currentPassword,
     newPassword = newPassword,
+)
+
+fun LogoutData.toRequest() = LogoutRequest(
+    refreshToken = refreshToken
 )

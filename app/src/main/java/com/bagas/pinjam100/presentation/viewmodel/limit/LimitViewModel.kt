@@ -1,8 +1,8 @@
 package com.bagas.pinjam100.presentation.viewmodel.limit
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bagas.pinjam100.core.error.AppResult
 import com.bagas.pinjam100.domain.repository.LimitRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,8 +22,6 @@ class LimitViewModel @Inject constructor(
 
     fun getCustomerLimit(customerId: String) {
         viewModelScope.launch {
-            Log.d("LimitViewModel", "getCustomerLimit customerId=$customerId")
-
             _uiState.update {
                 it.copy(
                     isLoading = true,
@@ -31,38 +29,25 @@ class LimitViewModel @Inject constructor(
                 )
             }
 
-            runCatching {
-                limitRepository.getCustomerLimit(customerId)
-            }.onSuccess { limit ->
-                Log.d("LimitViewModel", "limit=$limit")
-                Log.d("LimitViewModel", "limit exists=${limit != null}")
+            when (val result = limitRepository.getCustomerLimit(customerId)) {
 
-                if (limit != null) {
-                    Log.d(
-                        "LimitViewModel",
-                        "creditLimit=${limit.creditLimit}, availableLimit=${limit.availableLimit}"
-                    )
+                is AppResult.Success -> {
+                    _uiState.update {
+                        it.copy(
+                            limit = result.data,
+                            isLoading = false,
+                            errorMessage = null
+                        )
+                    }
                 }
 
-                _uiState.update {
-                    it.copy(
-                        limit = limit,
-                        isLoading = false,
-                        errorMessage = null
-                    )
-                }
-            }.onFailure { exception ->
-                Log.e(
-                    "LimitViewModel",
-                    "Failed to get customer limit",
-                    exception
-                )
-
-                _uiState.update {
-                    it.copy(
-                        isLoading = false,
-                        errorMessage = exception.message
-                    )
+                is AppResult.Failure -> {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = "Gagal mengambil data limit"
+                        )
+                    }
                 }
             }
         }

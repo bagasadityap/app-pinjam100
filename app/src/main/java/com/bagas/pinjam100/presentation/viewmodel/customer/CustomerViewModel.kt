@@ -2,6 +2,7 @@ package com.bagas.pinjam100.presentation.viewmodel.customer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.bagas.pinjam100.core.error.AppResult
 import com.bagas.pinjam100.domain.model.customer.Customer
 import com.bagas.pinjam100.domain.model.customer.CustomerOnboarding
 import com.bagas.pinjam100.domain.repository.CustomerRepository
@@ -20,25 +21,34 @@ class CustomerViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(CustomerUIState())
     val uiState: StateFlow<CustomerUIState> = _uiState.asStateFlow()
 
+    private val _detailUiState = MutableStateFlow(CustomerDetailUIState())
+    val detailUiState: StateFlow<CustomerDetailUIState> = _detailUiState.asStateFlow()
+
     fun getDetailById(id: String) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(
+            _detailUiState.value = _detailUiState.value.copy(
                 isLoading = true,
                 errorMessage = null
             )
 
-            try {
-                val customer = customerRepository.getDetailById(id)
+            when (
+                val result = customerRepository.getDetailById(id)
+            ) {
+                is AppResult.Success -> {
+                    _detailUiState.value =
+                        _detailUiState.value.copy(
+                            customerDetail = result.data,
+                            isLoading = false
+                        )
+                }
 
-                _uiState.value = _uiState.value.copy(
-                    customer = customer,
-                    isLoading = false
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isLoading = false,
-                    errorMessage = e.message
-                )
+                is AppResult.Failure -> {
+                    _detailUiState.value =
+                        _detailUiState.value.copy(
+                            isLoading = false,
+                            errorMessage = result.failure.toString()
+                        )
+                }
             }
         }
     }
@@ -54,19 +64,21 @@ class CustomerViewModel @Inject constructor(
                 successMessage = null
             )
 
-            try {
-                val result = customerRepository.update(id, customer)
+            when (val result = customerRepository.update(id, customer)) {
+                is AppResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        customer = result.data,
+                        isSubmitting = false,
+                        successMessage = "Data berhasil diperbarui"
+                    )
+                }
 
-                _uiState.value = _uiState.value.copy(
-                    customer = result,
-                    isSubmitting = false,
-                    successMessage = "Data berhasil diperbarui"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isSubmitting = false,
-                    errorMessage = e.message
-                )
+                is AppResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSubmitting = false,
+                        errorMessage = result.failure.toString()
+                    )
+                }
             }
         }
     }
@@ -82,19 +94,21 @@ class CustomerViewModel @Inject constructor(
                 successMessage = null
             )
 
-            try {
-                val result = customerRepository.saveOnboarding(id, request)
+            when (val result = customerRepository.saveOnboarding(id, request)) {
+                is AppResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        customer = result.data,
+                        isSubmitting = false,
+                        successMessage = "Data onboarding berhasil disimpan"
+                    )
+                }
 
-                _uiState.value = _uiState.value.copy(
-                    customer = result,
-                    isSubmitting = false,
-                    successMessage = "Data onboarding berhasil disimpan"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isSubmitting = false,
-                    errorMessage = e.message
-                )
+                is AppResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSubmitting = false,
+                        errorMessage = result.failure.toString()
+                    )
+                }
             }
         }
     }
@@ -110,19 +124,21 @@ class CustomerViewModel @Inject constructor(
                 successMessage = null
             )
 
-            try {
-                val result = customerRepository.updateOnboarding(id, request)
+            when (val result = customerRepository.updateOnboarding(id, request)) {
+                is AppResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        customer = result.data,
+                        isSubmitting = false,
+                        successMessage = "Data onboarding berhasil diperbarui"
+                    )
+                }
 
-                _uiState.value = _uiState.value.copy(
-                    customer = result,
-                    isSubmitting = false,
-                    successMessage = "Data onboarding berhasil diperbarui"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isSubmitting = false,
-                    errorMessage = e.message
-                )
+                is AppResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(
+                        isSubmitting = false,
+                        errorMessage = result.failure.toString()
+                    )
+                }
             }
         }
     }
@@ -135,19 +151,21 @@ class CustomerViewModel @Inject constructor(
                 successMessage = null
             )
 
-            try {
-                val result = customerRepository.delete(id)
+            when (val result = customerRepository.delete(id)) {
+                is AppResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        customer = result.data,
+                        isDeleting = false,
+                        successMessage = "Customer berhasil dihapus"
+                    )
+                }
 
-                _uiState.value = _uiState.value.copy(
-                    customer = result,
-                    isDeleting = false,
-                    successMessage = "Customer berhasil dihapus"
-                )
-            } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(
-                    isDeleting = false,
-                    errorMessage = e.message
-                )
+                is AppResult.Failure -> {
+                    _uiState.value = _uiState.value.copy(
+                        isDeleting = false,
+                        errorMessage = result.failure.toString()
+                    )
+                }
             }
         }
     }

@@ -5,10 +5,12 @@ import com.bagas.pinjam100.core.error.map
 import com.bagas.pinjam100.core.error.requirePayload
 import com.bagas.pinjam100.core.error.runApiCatching
 import com.bagas.pinjam100.data.customer.remote.CustomerApi
+import com.bagas.pinjam100.data.customer.remote.CustomerDetailResponse
 import com.bagas.pinjam100.data.customer.remote.CustomerRequest
 import com.bagas.pinjam100.data.customer.remote.toDomain
 import com.bagas.pinjam100.data.customer.remote.toRequest
 import com.bagas.pinjam100.domain.model.customer.Customer
+import com.bagas.pinjam100.domain.model.customer.CustomerDetail
 import com.bagas.pinjam100.domain.model.customer.CustomerOnboarding
 import com.bagas.pinjam100.domain.repository.CustomerRepository
 import kotlinx.serialization.json.Json
@@ -19,7 +21,7 @@ class CustomerRepositoryImpl @Inject constructor(
     private val json: Json
 ) : CustomerRepository {
 
-    override suspend fun getDetailById(id: String): AppResult<Customer> {
+    override suspend fun getDetailById(id: String): AppResult<CustomerDetail> {
         return runApiCatching(json) {
             api.getDetailById(id)
                 .requirePayload()

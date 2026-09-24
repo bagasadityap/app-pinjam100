@@ -7,6 +7,7 @@ import com.bagas.pinjam100.data.customer.local.CustomerDao
 import com.bagas.pinjam100.data.document.local.DocumentDao
 import com.bagas.pinjam100.data.loanapplication.local.LoanApplicationDao
 import com.bagas.pinjam100.data.installment.local.LoanInstallmentDao
+import com.bagas.pinjam100.data.limit.local.LimitDao
 import com.bagas.pinjam100.data.rekening.local.RekeningDao
 import com.bagas.pinjam100.data.transaction.local.TransactionHistoryDao
 import dagger.Module
@@ -62,4 +63,9 @@ object DatabaseModule {
     fun provideTransactionHistoryDao(
         database: AppDatabase
     ): TransactionHistoryDao = database.transactionHistoryDao()
+
+    @Provides
+    fun provideLimitDao(
+        database: AppDatabase
+    ): LimitDao = database.limitDao()
 }

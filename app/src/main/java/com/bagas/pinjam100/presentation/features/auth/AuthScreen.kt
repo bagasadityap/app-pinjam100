@@ -26,7 +26,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -184,6 +183,25 @@ fun AuthScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
+                        // Tombol Masuk
+                        OutlinedButton(
+                            onClick = { navController.navigate(LoginRoute) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(46.dp),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "MASUK",
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
                         // Divider Teks
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -207,31 +225,6 @@ fun AuthScreen(
 
                         Spacer(modifier = Modifier.height(12.dp))
 
-                        // Google Button
-                        OutlinedButton(
-                            onClick = {},
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(44.dp),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.google),
-                                contentDescription = "Google",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.size(8.dp))
-                            Text(
-                                text = "Lanjutkan dengan Google",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
                         // Guest Button
                         OutlinedButton(
                             onClick = { navController.navigate(GuestGraph) },
@@ -247,31 +240,6 @@ fun AuthScreen(
                                 ),
                                 color = MaterialTheme.colorScheme.onSurface
                             )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        // Login Link
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = "Sudah punya akun?",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            TextButton(
-                                onClick = { navController.navigate(LoginRoute) }
-                            ) {
-                                Text(
-                                    text = "Masuk",
-                                    style = MaterialTheme.typography.labelMedium.copy(
-                                        fontWeight = FontWeight.Bold
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
                         }
                     }
                 }
