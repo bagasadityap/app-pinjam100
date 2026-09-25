@@ -24,13 +24,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
-import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Calculate
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material3.Badge
@@ -45,6 +43,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -57,18 +57,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.bagas.pinjam100.R
 import com.bagas.pinjam100.domain.model.auth.AuthUser
 import com.bagas.pinjam100.domain.model.limit.Limit
+import com.bagas.pinjam100.domain.model.transaction.TransactionHistory
+import com.bagas.pinjam100.domain.model.transaction.TransactionType
 import com.bagas.pinjam100.presentation.components.PullToRefreshContainer
+import com.bagas.pinjam100.presentation.navigation.HelpRoute
 import com.bagas.pinjam100.presentation.navigation.LoanApplicationRoute
+import com.bagas.pinjam100.presentation.navigation.LoanInstallmentListRoute
 import com.bagas.pinjam100.presentation.navigation.LoanSimulationRoute
 import com.bagas.pinjam100.presentation.navigation.NotificationRoute
-import com.bagas.pinjam100.presentation.navigation.ProductListRoute
 import com.bagas.pinjam100.presentation.navigation.TransactionRoute
 import com.bagas.pinjam100.presentation.viewmodel.limit.LimitUIState
+import com.bagas.pinjam100.presentation.viewmodel.transaction.TransactionHistoryViewModel
 import com.bagas.pinjam100.ui.theme.SecondaryYellow
+import java.math.BigDecimal
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -83,8 +90,17 @@ fun HomeScreen(
     navController: NavHostController,
     user: AuthUser?,
     limitState: LimitUIState,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    transactionViewModel: TransactionHistoryViewModel = hiltViewModel()
 ) {
+    val transactionState by transactionViewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(user) {
+        user?.id?.let { customerId ->
+            transactionViewModel.getByCustomerId(customerId)
+        }
+    }
+
     val promos = listOf(
         Promo(
             title = "Promo Pinjaman Spesial",
@@ -98,7 +114,12 @@ fun HomeScreen(
 
     PullToRefreshContainer(
         isRefreshing = limitState.isLoading,
-        onRefresh = onRefresh,
+        onRefresh = {
+            onRefresh()
+            user?.id?.let { customerId ->
+                transactionViewModel.getByCustomerId(customerId)
+            }
+        },
         modifier = modifier
     ) {
         Scaffold(
@@ -156,6 +177,12 @@ fun HomeScreen(
                         },
                         onSimulationClick = {
                             navController.navigate(LoanSimulationRoute)
+                        },
+                        onInstallmentCLick = {
+                            navController.navigate(LoanInstallmentListRoute)
+                        },
+                        onHelpClick = {
+                            navController.navigate(HelpRoute)
                         }
                     )
                 }
@@ -166,6 +193,7 @@ fun HomeScreen(
 
                 item {
                     TransactionHistorySection(
+                        transactions = transactionState.transactions,
                         onClick = {
                             navController.navigate(TransactionRoute)
                         }
@@ -176,7 +204,6 @@ fun HomeScreen(
     }
 }
 
-// HEADER ASLI
 @Composable
 private fun HomeHeader(
     name: String,
@@ -284,7 +311,6 @@ private fun LoadingLimitCard() {
     }
 }
 
-// CARD LIMIT BARU (MODERN)
 @Composable
 private fun LimitCard(
     limit: Limit
@@ -546,11 +572,12 @@ private fun VerificationCard() {
     }
 }
 
-// LAYANAN HANYA 4 (Pengajuan, Simulasi, Pembayaran, Bantuan)
 @Composable
 private fun ServiceSection(
     onLoanClick: () -> Unit,
-    onSimulationClick: () -> Unit
+    onSimulationClick: () -> Unit,
+    onInstallmentCLick: () -> Unit,
+    onHelpClick: () -> Unit
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(14.dp)
@@ -594,7 +621,7 @@ private fun ServiceSection(
                 icon = Icons.Filled.Payments,
                 title = "Pembayaran",
                 description = "Bayar tagihan",
-                onClick = {}
+                onClick = onInstallmentCLick
             )
 
             ServiceCard(
@@ -602,13 +629,12 @@ private fun ServiceSection(
                 icon = Icons.AutoMirrored.Filled.HelpOutline,
                 title = "Bantuan",
                 description = "Butuh bantuan?",
-                onClick = {}
+                onClick = onHelpClick
             )
         }
     }
 }
 
-// SERVICECARD ASLI DENGAN DESKRIPSI
 @Composable
 private fun ServiceCard(
     modifier: Modifier = Modifier,
@@ -697,7 +723,6 @@ private fun ServiceCard(
     }
 }
 
-// PROMO BARU (MODERN)
 @Composable
 private fun PromoSection(
     promos: List<Promo>
@@ -780,17 +805,11 @@ private fun PromoCard(
     }
 }
 
-// AKTIVITAS TERAKHIR BARU (MODERN)
 @Composable
 private fun TransactionHistorySection(
+    transactions: List<TransactionHistory>,
     onClick: () -> Unit
 ) {
-    val transactions = listOf(
-        "Pencairan Pinjaman",
-        "Pembayaran Angsuran",
-        "Pembayaran Angsuran"
-    )
-
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -839,18 +858,13 @@ private fun TransactionHistorySection(
             Column(
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
             ) {
-                transactions.forEachIndexed { index, transaction ->
+                transactions.take(3).forEach { transaction ->
+                    val isIncome = transaction.type == TransactionType.DISBURSEMENT
                     TransactionHistoryItem(
-                        title = transaction,
-                        description = when (index) {
-                            0 -> "Pinjaman berhasil dicairkan"
-                            else -> "Pembayaran angsuran berhasil"
-                        },
-                        amount = when (index) {
-                            0 -> "+ Rp5.000.000"
-                            else -> "- Rp175.000"
-                        },
-                        positive = index == 0
+                        title = if (isIncome) "Pencairan Pinjaman" else "Pembayaran Angsuran",
+                        description = if (isIncome) "Pinjaman berhasil dicairkan" else "Pembayaran angsuran berhasil",
+                        amount = "${if (isIncome) "+" else "-"} ${formatRupiah(transaction.amount)}",
+                        positive = isIncome
                     )
                 }
             }
@@ -947,4 +961,15 @@ private fun Long.toRupiah(): String {
     return NumberFormat
         .getNumberInstance(Locale("id", "ID"))
         .format(this)
+}
+
+private fun formatRupiah(amount: BigDecimal): String {
+    val formatter = java.text.NumberFormat.getNumberInstance(
+        Locale("id", "ID")
+    ).apply {
+        maximumFractionDigits = 0
+        minimumFractionDigits = 0
+    }
+
+    return "Rp${formatter.format(amount)}"
 }
