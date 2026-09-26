@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">pinjam100</string>
+    <string name="app_name">Pinjam100</string>
 
     <!-- Notification -->
     <string name="notification_channel_general">Umum</string>
