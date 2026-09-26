@@ -37,6 +37,16 @@ fun CustomerOnboarding.toRequest(): CustomerOnboardingRequest {
 
 fun CustomerDetailResponse.toDomain(): CustomerDetail {
     return CustomerDetail(
+        id = id,
+        customerNumber = customerNumber,
+        fullName = fullName,
+        email = email,
+        phoneNumber = phoneNumber,
+        nationalId = nationalId,
+        verificationStatus = verificationStatus,
+        createdDate = createdDate,
+        profileCompleted = profileCompleted,
+
         birthDate = detail?.birthDate,
         placeOfBirth = detail?.placeOfBirth,
         gender = detail?.gender,

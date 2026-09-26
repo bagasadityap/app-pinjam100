@@ -4,6 +4,16 @@ import com.bagas.pinjam100.domain.model.document.Document
 import com.bagas.pinjam100.domain.model.rekening.Rekening
 
 data class CustomerDetail(
+    val id: String,
+    val customerNumber: String,
+    val fullName: String,
+    val email: String,
+    val phoneNumber: String,
+    val nationalId: String?,
+    val verificationStatus: String,
+    val createdDate: String,
+    val profileCompleted: Boolean,
+
     val birthDate: String?,
     val placeOfBirth: String?,
     val gender: String?,

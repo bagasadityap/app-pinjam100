@@ -19,7 +19,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Logout
@@ -36,6 +38,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,6 +58,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bagas.pinjam100.presentation.components.PullToRefreshContainer
 import com.bagas.pinjam100.presentation.viewmodel.auth.AuthViewModel
+import com.bagas.pinjam100.presentation.viewmodel.customer.CustomerViewModel
 import com.bagas.pinjam100.ui.theme.Pinjam100Theme
 
 private data class ProfileMenu(
@@ -72,7 +76,8 @@ private data class ProfileSection(
 @Composable
 fun ProfileScreen(
     modifier: Modifier = Modifier,
-    viewModel: AuthViewModel = hiltViewModel(),
+    authViewModel: AuthViewModel = hiltViewModel(),
+    customerViewModel: CustomerViewModel = hiltViewModel(),
     onRefresh: () -> Unit = {},
     onPersonalDataSetting: () -> Unit = {},
     onLogout: () -> Unit = {},
@@ -80,7 +85,14 @@ fun ProfileScreen(
     onHelp: () -> Unit = {},
     onAbout: () -> Unit = {}
 ) {
-    val authState by viewModel.uiState.collectAsState()
+    val authState by authViewModel.uiState.collectAsState()
+    val detailUiState by customerViewModel.detailUiState.collectAsState()
+
+    LaunchedEffect(authState.user?.id) {
+        authState.user?.id?.let { customerId ->
+            customerViewModel.getDetailById(customerId)
+        }
+    }
 
     var showLogoutDialog by remember {
         mutableStateOf(false)
@@ -132,9 +144,17 @@ fun ProfileScreen(
         preferencesSection
     )
 
+    // Data customer diambil dari customerDetail di CustomerViewModel
+    val customerDetail = detailUiState.customerDetail
+
     PullToRefreshContainer(
-        isRefreshing = authState.isSubmitting,
-        onRefresh = onRefresh,
+        isRefreshing = detailUiState.isLoading || authState.isSubmitting,
+        onRefresh = {
+            authState.user?.id?.let { customerId ->
+                customerViewModel.getDetailById(customerId)
+            }
+            onRefresh()
+        },
         modifier = modifier
     ) {
         Scaffold(
@@ -166,9 +186,10 @@ fun ProfileScreen(
 
                 item {
                     ProfileHeaderCard(
-                        fullName = authState.user?.fullName ?: "-",
-                        email = authState.user?.email ?: "-",
-                        phoneNumber = authState.user?.phoneNumber ?: "-"
+                        fullName = customerDetail?.fullName ?: authState.user?.fullName ?: "-",
+                        email = customerDetail?.email ?: authState.user?.email ?: "-",
+                        phoneNumber = customerDetail?.phoneNumber ?: authState.user?.phoneNumber ?: "-",
+                        verificationStatus = customerDetail?.verificationStatus
                     )
                 }
 
@@ -216,7 +237,7 @@ fun ProfileScreen(
                 TextButton(
                     onClick = {
                         showLogoutDialog = false
-                        viewModel.logout()
+                        authViewModel.logout()
                         onLogout()
                     }
                 ) {
@@ -244,8 +265,32 @@ fun ProfileScreen(
 private fun ProfileHeaderCard(
     fullName: String,
     email: String,
-    phoneNumber: String
+    phoneNumber: String,
+    verificationStatus: Any? = null
 ) {
+    val statusString = verificationStatus?.toString()
+
+    val (badgeBgColor, badgeContentColor, badgeIcon, badgeText) = when {
+        statusString.equals("VERIFIED", ignoreCase = true) -> StatusBadgeConfig(
+            bgColor = Color(0xFF16A34A).copy(alpha = 0.08f),
+            contentColor = Color(0xFF16A34A),
+            icon = Icons.Filled.VerifiedUser,
+            text = "Akun Terverifikasi"
+        )
+        statusString.equals("REJECTED", ignoreCase = true) -> StatusBadgeConfig(
+            bgColor = MaterialTheme.colorScheme.error.copy(alpha = 0.08f),
+            contentColor = MaterialTheme.colorScheme.error,
+            icon = Icons.Filled.Cancel,
+            text = "Verifikasi Ditolak"
+        )
+        else -> StatusBadgeConfig(
+            bgColor = Color(0xFFD97706).copy(alpha = 0.08f),
+            contentColor = Color(0xFFD97706),
+            icon = Icons.Filled.History,
+            text = "Menunggu Verifikasi"
+        )
+    }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -347,9 +392,7 @@ private fun ProfileHeaderCard(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp))
-                    .background(
-                        Color(0xFF16A34A).copy(alpha = 0.08f)
-                    )
+                    .background(badgeBgColor)
                     .padding(
                         horizontal = 12.dp,
                         vertical = 8.dp
@@ -357,9 +400,9 @@ private fun ProfileHeaderCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = Icons.Filled.VerifiedUser,
+                    imageVector = badgeIcon,
                     contentDescription = null,
-                    tint = Color(0xFF16A34A),
+                    tint = badgeContentColor,
                     modifier = Modifier.size(18.dp)
                 )
 
@@ -368,16 +411,23 @@ private fun ProfileHeaderCard(
                 )
 
                 Text(
-                    text = "Akun Terverifikasi",
+                    text = badgeText,
                     style = MaterialTheme.typography.labelMedium.copy(
                         fontWeight = FontWeight.SemiBold
                     ),
-                    color = Color(0xFF16A34A)
+                    color = badgeContentColor
                 )
             }
         }
     }
 }
+
+private data class StatusBadgeConfig(
+    val bgColor: Color,
+    val contentColor: Color,
+    val icon: ImageVector,
+    val text: String
+)
 
 @Composable
 private fun ProfileSectionGroup(

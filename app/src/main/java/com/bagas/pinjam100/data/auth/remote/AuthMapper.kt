@@ -30,7 +30,8 @@ fun AuthUserResponse.toDomain() = AuthUser(
     fullName = fullName,
     phoneNumber = phoneNumber,
     email = email,
-    profileCompleted = profileCompleted
+    profileCompleted = profileCompleted,
+    verificationStatus = verificationStatus
 )
 
 fun RegisterData.toRequest() = RegisterRequest(

@@ -26,6 +26,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.AccountBalanceWallet
 import androidx.compose.material.icons.filled.Calculate
+import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.History
@@ -54,6 +55,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -72,6 +74,7 @@ import com.bagas.pinjam100.presentation.navigation.LoanInstallmentListRoute
 import com.bagas.pinjam100.presentation.navigation.LoanSimulationRoute
 import com.bagas.pinjam100.presentation.navigation.NotificationRoute
 import com.bagas.pinjam100.presentation.navigation.TransactionRoute
+import com.bagas.pinjam100.presentation.viewmodel.customer.CustomerViewModel
 import com.bagas.pinjam100.presentation.viewmodel.limit.LimitUIState
 import com.bagas.pinjam100.presentation.viewmodel.transaction.TransactionHistoryViewModel
 import com.bagas.pinjam100.ui.theme.SecondaryYellow
@@ -91,15 +94,20 @@ fun HomeScreen(
     user: AuthUser?,
     limitState: LimitUIState,
     onRefresh: () -> Unit,
+    customerViewModel: CustomerViewModel = hiltViewModel(),
     transactionViewModel: TransactionHistoryViewModel = hiltViewModel()
 ) {
     val transactionState by transactionViewModel.uiState.collectAsStateWithLifecycle()
+    val detailUiState by customerViewModel.detailUiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(user) {
+    LaunchedEffect(user?.id) {
         user?.id?.let { customerId ->
+            customerViewModel.getDetailById(customerId)
             transactionViewModel.getByCustomerId(customerId)
         }
     }
+
+    val customerDetail = detailUiState.customerDetail
 
     val promos = listOf(
         Promo(
@@ -113,10 +121,11 @@ fun HomeScreen(
     )
 
     PullToRefreshContainer(
-        isRefreshing = limitState.isLoading,
+        isRefreshing = limitState.isLoading || detailUiState.isLoading,
         onRefresh = {
             onRefresh()
             user?.id?.let { customerId ->
+                customerViewModel.getDetailById(customerId)
                 transactionViewModel.getByCustomerId(customerId)
             }
         },
@@ -141,7 +150,7 @@ fun HomeScreen(
             ) {
                 item {
                     HomeHeader(
-                        name = user?.fullName ?: "Pengguna",
+                        name = customerDetail?.fullName ?: user?.fullName ?: "Pengguna",
                         onNotificationClick = {
                             navController.navigate(NotificationRoute)
                         }
@@ -149,23 +158,23 @@ fun HomeScreen(
                 }
 
                 item {
-                    when {
-                        limitState.isLoading -> {
-                            LoadingLimitCard()
-                        }
+                    if (customerDetail?.verificationStatus?.equals("REJECTED", ignoreCase = true) == true) {
+                        RejectedCard()
+                    } else {
+                        when {
+                            limitState.isLoading -> {
+                                LoadingLimitCard()
+                            }
 
-                        limitState.errorMessage != null -> {
-                            VerificationCard()
-                        }
+                            limitState.limit != null -> {
+                                LimitCard(
+                                    limit = limitState.limit
+                                )
+                            }
 
-                        limitState.limit != null -> {
-                            LimitCard(
-                                limit = limitState.limit
-                            )
-                        }
-
-                        else -> {
-                            VerificationCard()
+                            else -> {
+                                VerificationCard()
+                            }
                         }
                     }
                 }
@@ -573,6 +582,77 @@ private fun VerificationCard() {
 }
 
 @Composable
+private fun RejectedCard() {
+    val redContainerColor = Color(0xFFDC2626)
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = redContainerColor
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(22.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(CircleShape)
+                        .background(
+                            Color.White.copy(alpha = 0.15f)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Cancel,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(12.dp))
+
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Text(
+                        text = "Pengajuan Ditolak",
+                        style = MaterialTheme.typography.titleMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = Color.White
+                    )
+
+                    Text(
+                        text = "Mohon maaf, pengajuan Anda ditolak",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.White.copy(alpha = 0.85f)
+                    )
+                }
+            }
+
+            Text(
+                text = "Data Anda belum memenuhi kriteria verifikasi kami. Silakan hubungi layanan bantuan untuk informasi lebih lanjut.",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.White.copy(alpha = 0.9f)
+            )
+        }
+    }
+}
+
+@Composable
 private fun ServiceSection(
     onLoanClick: () -> Unit,
     onSimulationClick: () -> Unit,
@@ -855,17 +935,33 @@ private fun TransactionHistorySection(
             color = MaterialTheme.colorScheme.surface,
             tonalElevation = 1.dp
         ) {
-            Column(
-                modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
-            ) {
-                transactions.take(3).forEach { transaction ->
-                    val isIncome = transaction.type == TransactionType.DISBURSEMENT
-                    TransactionHistoryItem(
-                        title = if (isIncome) "Pencairan Pinjaman" else "Pembayaran Angsuran",
-                        description = if (isIncome) "Pinjaman berhasil dicairkan" else "Pembayaran angsuran berhasil",
-                        amount = "${if (isIncome) "+" else "-"} ${formatRupiah(transaction.amount)}",
-                        positive = isIncome
+            if (transactions.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp, horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "Belum ada transaksi",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center
                     )
+                }
+            } else {
+                Column(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                ) {
+                    transactions.take(3).forEach { transaction ->
+                        val isIncome = transaction.type == TransactionType.DISBURSEMENT
+                        TransactionHistoryItem(
+                            title = if (isIncome) "Pencairan Pinjaman" else "Pembayaran Angsuran",
+                            description = if (isIncome) "Pinjaman berhasil dicairkan" else "Pembayaran angsuran berhasil",
+                            amount = "${if (isIncome) "+" else "-"} ${formatRupiah(transaction.amount)}",
+                            positive = isIncome
+                        )
+                    }
                 }
             }
         }

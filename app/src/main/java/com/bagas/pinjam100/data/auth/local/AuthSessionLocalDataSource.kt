@@ -50,6 +50,7 @@ class AuthSessionLocalDataSource(context: Context) {
                 preferences[Keys.USER_PHONE_NUMBER] = it.phoneNumber
                 preferences[Keys.USER_EMAIL] = it.email
                 preferences[Keys.USER_PROFILE_COMPLETED] = it.profileCompleted
+                preferences[Keys.USER_VERIFICATION_STATUS] = it.verificationStatus
             }
         }
     }
@@ -67,6 +68,7 @@ class AuthSessionLocalDataSource(context: Context) {
         val phoneNumber = preferences[Keys.USER_PHONE_NUMBER] ?: return null
         val email = preferences[Keys.USER_EMAIL] ?: return null
         val profileCompleted = preferences[Keys.USER_PROFILE_COMPLETED] ?: return null
+        val verificationStatus = preferences[Keys.USER_VERIFICATION_STATUS] ?: return null
 
         val accessToken = preferences[Keys.ACCESS_TOKEN] ?: return null
         val refreshToken = preferences[Keys.REFRESH_TOKEN] ?: return null
@@ -80,6 +82,7 @@ class AuthSessionLocalDataSource(context: Context) {
                 phoneNumber = phoneNumber,
                 email = email,
                 profileCompleted = profileCompleted,
+                verificationStatus = verificationStatus
             ),
             accessToken = accessToken,
             refreshToken = refreshToken,
@@ -105,6 +108,7 @@ class AuthSessionLocalDataSource(context: Context) {
         val USER_PHONE_NUMBER = stringPreferencesKey("user_phone_number")
         val USER_EMAIL = stringPreferencesKey("user_email")
         val USER_PROFILE_COMPLETED = booleanPreferencesKey("user_profile_completed")
+        val USER_VERIFICATION_STATUS = stringPreferencesKey("user_verification_status")
 
         val ACCESS_TOKEN = stringPreferencesKey("access_token")
         val REFRESH_TOKEN = stringPreferencesKey("refresh_token")

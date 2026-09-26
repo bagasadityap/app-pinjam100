@@ -9,5 +9,6 @@ data class AuthUserResponse(
     val fullName: String,
     val email: String,
     val phoneNumber: String,
-    val profileCompleted: Boolean
+    val profileCompleted: Boolean,
+    val verificationStatus: String
 )
