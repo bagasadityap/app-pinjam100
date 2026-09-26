@@ -150,10 +150,7 @@ fun HomeScreen(
             ) {
                 item {
                     HomeHeader(
-                        name = customerDetail?.fullName ?: user?.fullName ?: "Pengguna",
-                        onNotificationClick = {
-                            navController.navigate(NotificationRoute)
-                        }
+                        name = customerDetail?.fullName ?: user?.fullName ?: "Pengguna"
                     )
                 }
 
@@ -215,8 +212,7 @@ fun HomeScreen(
 
 @Composable
 private fun HomeHeader(
-    name: String,
-    onNotificationClick: () -> Unit
+    name: String
 ) {
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -232,26 +228,6 @@ private fun HomeHeader(
                 modifier = Modifier.height(25.dp),
                 contentScale = ContentScale.Fit
             )
-
-            BadgedBox(
-                badge = {
-                    Badge(
-                        modifier = Modifier.size(9.dp),
-                        containerColor = Color(0xFFDC2626)
-                    )
-                }
-            ) {
-                IconButton(
-                    onClick = onNotificationClick
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Notifications,
-                        contentDescription = "Notifikasi",
-                        tint = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier.size(25.dp)
-                    )
-                }
-            }
         }
 
         Spacer(modifier = Modifier.height(8.dp))

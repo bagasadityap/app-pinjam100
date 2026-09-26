@@ -25,7 +25,6 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.AlertDialog
@@ -120,11 +119,6 @@ fun ProfileScreen(
         sectionTitle = "Preferensi & Bantuan",
         items = listOf(
             ProfileMenu(
-                icon = Icons.Filled.Notifications,
-                title = "Notifikasi",
-                description = "Atur notifikasi & pengingat"
-            ),
-            ProfileMenu(
                 icon = Icons.AutoMirrored.Filled.HelpOutline,
                 title = "Pusat Bantuan",
                 description = "FAQ dan Customer Service",
@@ -144,7 +138,6 @@ fun ProfileScreen(
         preferencesSection
     )
 
-    // Data customer diambil dari customerDetail di CustomerViewModel
     val customerDetail = detailUiState.customerDetail
 
     PullToRefreshContainer(
