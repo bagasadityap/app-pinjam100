@@ -64,7 +64,7 @@ enum class LoanStatus(
     val icon: ImageVector
 ) {
     PENGAJUAN(
-        label = "Pengajuan",
+        label = "Diproses",
         icon = Icons.Filled.Pending
     ),
     BERJALAN(
@@ -640,9 +640,10 @@ private fun LoanStatus.contentColor(): Color {
 
 private fun String.toLoanStatus(): LoanStatus {
     return when (uppercase()) {
+        "UNDER_REVIEW", "PASS_REVIEW", "APPROVED" -> LoanStatus.PENGAJUAN
         "DISBURSED" -> LoanStatus.BERJALAN
         "DONE" -> LoanStatus.LUNAS
-        "REJECTED" -> LoanStatus.DITOLAK
+        "REJECT_REVIEW", "REJECTED" -> LoanStatus.DITOLAK
         "CANCELLED" -> LoanStatus.DIBATALKAN
         else -> LoanStatus.PENGAJUAN
     }

@@ -602,9 +602,10 @@ private fun CustomerRow(
 
 private fun String.toLoanStatus(): LoanStatus {
     return when (uppercase()) {
+        "UNDER_REVIEW", "PASS_REVIEW", "APPROVED" -> LoanStatus.PENGAJUAN
         "DISBURSED" -> LoanStatus.BERJALAN
         "DONE" -> LoanStatus.LUNAS
-        "REJECTED" -> LoanStatus.DITOLAK
+        "REJECT_REVIEW", "REJECTED" -> LoanStatus.DITOLAK
         "CANCELLED" -> LoanStatus.DIBATALKAN
         else -> LoanStatus.PENGAJUAN
     }
