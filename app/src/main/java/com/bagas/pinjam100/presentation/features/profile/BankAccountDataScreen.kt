@@ -78,6 +78,12 @@ fun BankAccountDataScreen(
     var showBankDialog by remember { mutableStateOf(false) }
     val rekening = onboardingState.rekenings.firstOrNull()
 
+    val isFormValid = remember(rekening) {
+        !rekening?.namaBank.isNullOrBlank() &&
+                !rekening?.noRekening.isNullOrBlank() &&
+                !rekening?.accountHolder.isNullOrBlank()
+    }
+
     if (showBankDialog) {
         BankSelectionDialog(
             title = "Pilih Bank",
@@ -103,7 +109,6 @@ fun BankAccountDataScreen(
                 .padding(horizontal = 20.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Step Progress Indicator
             item {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -132,7 +137,6 @@ fun BankAccountDataScreen(
                 }
             }
 
-            // Form Bank Account Section Card
             item {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -188,11 +192,11 @@ fun BankAccountDataScreen(
                 }
             }
 
-            // Action Button
             item {
                 Spacer(modifier = Modifier.height(4.dp))
                 Button(
                     onClick = onNext,
+                    enabled = isFormValid,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -253,13 +257,22 @@ private fun FormTextField(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = " *",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
 
         OutlinedTextField(
             value = value,
@@ -304,13 +317,22 @@ private fun FormSelectionField(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = " *",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
 
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(

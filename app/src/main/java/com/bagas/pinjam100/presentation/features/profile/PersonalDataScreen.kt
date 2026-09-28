@@ -89,6 +89,18 @@ fun PersonalDataScreen(
     var showDistrictDialog by remember { mutableStateOf(false) }
     var showVillageDialog by remember { mutableStateOf(false) }
 
+    val isFormValid = remember(onboardingState, wilayahState) {
+        onboardingState.birthDate.isNotBlank() &&
+                onboardingState.placeOfBirth.isNotBlank() &&
+                onboardingState.gender.isNotBlank() &&
+                onboardingState.address.isNotBlank() &&
+                wilayahState.selectedProvince != null &&
+                wilayahState.selectedRegency != null &&
+                wilayahState.selectedDistrict != null &&
+                wilayahState.selectedVillage != null &&
+                onboardingState.postalCode.isNotBlank()
+    }
+
     val maxAllowedTimestamp = remember {
         Calendar.getInstance().apply {
             add(Calendar.YEAR, -18)
@@ -426,6 +438,7 @@ fun PersonalDataScreen(
                 Spacer(modifier = Modifier.height(4.dp))
                 Button(
                     onClick = onNext,
+                    enabled = isFormValid,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -488,13 +501,22 @@ private fun FormTextField(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = " *",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
 
         OutlinedTextField(
             value = value,
@@ -541,13 +563,22 @@ private fun FormSelectionField(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium.copy(
-                fontWeight = FontWeight.SemiBold
-            ),
-            color = MaterialTheme.colorScheme.onSurface
-        )
+        Row {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.SemiBold
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Text(
+                text = " *",
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
 
         Box(modifier = Modifier.fillMaxWidth()) {
             OutlinedTextField(
