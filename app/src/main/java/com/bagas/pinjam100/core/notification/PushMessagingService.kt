@@ -21,10 +21,8 @@ class PushMessagingService : FirebaseMessagingService() {
         subscribeToTopics()
     }
 
-    // Re-subscribe to topics when the FCM token changes.
     override fun onNewToken(token: String) {
         super.onNewToken(token)
-        Log.d(TAG, "FCM token: $token")
         subscribeToTopics()
     }
 

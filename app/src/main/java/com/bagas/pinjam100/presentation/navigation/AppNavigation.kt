@@ -3,7 +3,10 @@ package com.bagas.pinjam100.presentation.navigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -153,15 +156,19 @@ fun AppNavHost(
             }
         }
 
+        val contentPadding = PaddingValues(
+            top = innerPadding.calculateTopPadding(),
+            bottom = if (showBottomBar) {
+                innerPadding.calculateBottomPadding()
+            } else {
+                0.dp
+            }
+        )
+
         NavHost(
-            modifier = Modifier.padding(
-                top = innerPadding.calculateTopPadding(),
-                bottom = if (showBottomBar) {
-                    innerPadding.calculateBottomPadding()
-                } else {
-                    0.dp
-                }
-            ),
+            modifier = Modifier
+                .padding(contentPadding)
+                .consumeWindowInsets(contentPadding),
             navController = navController,
             startDestination = startDestination
         ) {
@@ -222,7 +229,8 @@ private fun AppBottomBar(
     ) {
         NavigationBar(
             modifier = Modifier.fillMaxWidth(),
-            containerColor = MaterialTheme.colorScheme.surface
+            containerColor = MaterialTheme.colorScheme.surface,
+            windowInsets = WindowInsets(0, 0, 0, 0)
         ) {
             destinations.forEach { destination ->
                 if (destination == TopLevelDestination.LOAN) {
