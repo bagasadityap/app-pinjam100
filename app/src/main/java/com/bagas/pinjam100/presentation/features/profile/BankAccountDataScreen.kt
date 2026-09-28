@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.CreditCard
@@ -42,6 +43,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -78,6 +80,16 @@ fun BankAccountDataScreen(
     var showBankDialog by remember { mutableStateOf(false) }
     val rekening = onboardingState.rekenings.firstOrNull()
 
+    var selectedBankDropdown by remember {
+        mutableStateOf(
+            when {
+                rekening?.namaBank.isNullOrBlank() -> ""
+                rekening?.namaBank in BankOptions -> rekening?.namaBank ?: ""
+                else -> "Lainnya"
+            }
+        )
+    }
+
     val isFormValid = remember(rekening) {
         !rekening?.namaBank.isNullOrBlank() &&
                 !rekening?.noRekening.isNullOrBlank() &&
@@ -90,7 +102,14 @@ fun BankAccountDataScreen(
             items = BankOptions,
             onDismiss = { showBankDialog = false },
             onSelected = { bank ->
-                onNamaBankChanged(bank)
+                selectedBankDropdown = bank
+                if (bank != "Lainnya") {
+                    onNamaBankChanged(bank)
+                } else {
+                    if (rekening?.namaBank in BankOptions) {
+                        onNamaBankChanged("")
+                    }
+                }
                 showBankDialog = false
             }
         )
@@ -163,17 +182,28 @@ fun BankAccountDataScreen(
 
                         FormSelectionField(
                             label = "Nama Bank",
-                            value = rekening?.namaBank.orEmpty(),
+                            value = selectedBankDropdown,
                             placeholder = "Pilih nama bank",
                             leadingIcon = Icons.Default.AccountBalance,
                             onClick = { showBankDialog = true }
                         )
+
+                        if (selectedBankDropdown == "Lainnya") {
+                            FormTextField(
+                                label = "Nama Bank Lainnya",
+                                value = if (rekening?.namaBank !in BankOptions) rekening?.namaBank.orEmpty() else "",
+                                placeholder = "Masukkan nama bank",
+                                leadingIcon = Icons.Default.AccountBalance,
+                                onValueChange = onNamaBankChanged
+                            )
+                        }
 
                         FormTextField(
                             label = "Nomor Rekening",
                             value = rekening?.noRekening.orEmpty(),
                             placeholder = "Masukkan nomor rekening",
                             leadingIcon = Icons.Default.CreditCard,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             onValueChange = {
                                 if (it.length <= 20 && it.all(Char::isDigit)) {
                                     onNoRekeningChanged(it)
@@ -251,6 +281,7 @@ private fun FormTextField(
     value: String,
     placeholder: String,
     leadingIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     onValueChange: (String) -> Unit = {}
 ) {
     Column(
@@ -294,6 +325,7 @@ private fun FormTextField(
                     modifier = Modifier.size(20.dp)
                 )
             },
+            keyboardOptions = keyboardOptions,
             shape = RoundedCornerShape(12.dp),
             singleLine = true,
             colors = OutlinedTextFieldDefaults.colors(

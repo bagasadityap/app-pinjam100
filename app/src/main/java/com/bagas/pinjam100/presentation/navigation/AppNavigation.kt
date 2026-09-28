@@ -829,6 +829,14 @@ fun NavGraphBuilder.loanGraph(
                     limitState = limitState,
                     onRefresh = {
                         limitViewModel.getCustomerLimit(customerId)
+                    },
+                    onSuccess = {
+                        navController.navigate(LoanApplicationListRoute) {
+                            popUpTo<LoanApplicationListRoute> {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
                     }
                 )
             }

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -361,7 +362,10 @@ private fun ServiceCard(
         elevation = CardDefaults.cardElevation(
             defaultElevation = if (highlighted) 0.dp else 2.dp
         ),
-        border = if (highlighted) androidx.compose.foundation.BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)) else null
+        border = if (highlighted) androidx.compose.foundation.BorderStroke(
+            1.dp,
+            MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+        ) else null
     ) {
         Column(
             modifier = Modifier
@@ -517,7 +521,8 @@ private fun GuestBottomBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .background(MaterialTheme.colorScheme.surface)
+            .navigationBarsPadding()
     ) {
         Surface(
             modifier = Modifier

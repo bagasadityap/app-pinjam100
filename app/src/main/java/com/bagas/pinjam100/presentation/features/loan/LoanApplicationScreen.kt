@@ -1,5 +1,8 @@
 package com.bagas.pinjam100.presentation.features.loan
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,10 +30,12 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -46,12 +51,14 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.DialogProperties
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.bagas.pinjam100.presentation.components.PullToRefreshContainer
 import com.bagas.pinjam100.presentation.viewmodel.limit.LimitUIState
 import com.bagas.pinjam100.presentation.viewmodel.loanapplication.LoanApplicationViewModel
 import com.bagas.pinjam100.ui.theme.Pinjam100Theme
 import com.bagas.pinjam100.ui.theme.SecondaryYellow
+import kotlinx.coroutines.delay
 
 private const val MIN_LOAN_AMOUNT = 500_000L
 private const val MAX_LOAN_AMOUNT = 35_000_000L
@@ -71,6 +78,7 @@ fun LoanApplicationScreen(
     var purpose by remember { mutableStateOf("") }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
+    var isSubmittingForm by remember { mutableStateOf(false) }
 
     val uiState by viewModel.uiState.collectAsState()
 
@@ -288,17 +296,20 @@ fun LoanApplicationScreen(
             confirmButton = {
                 Button(
                     onClick = {
-                        showConfirmationDialog = false
-                        showSuccessDialog = true
-                        onRefresh()
+                        if (!isSubmittingForm) {
+                            isSubmittingForm = true
+                            showConfirmationDialog = false
+                            showSuccessDialog = true
+                            onRefresh()
 
-                        viewModel.create(
-                            customerId = customerId,
-                            loanAmount = amount ?: 0L,
-                            tenorMonths = selectedTenor,
-                            purpose = purpose,
-                            onSuccess = onSuccess
-                        )
+                            viewModel.create(
+                                customerId = customerId,
+                                loanAmount = amount ?: 0L,
+                                tenorMonths = selectedTenor,
+                                purpose = purpose,
+                                onSuccess = {}
+                            )
+                        }
                     },
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary
@@ -324,10 +335,26 @@ fun LoanApplicationScreen(
     }
 
     if (showSuccessDialog) {
+        var startAnimation by remember { mutableStateOf(false) }
+        val progress by animateFloatAsState(
+            targetValue = if (startAnimation) 0f else 1f,
+            animationSpec = tween(durationMillis = 1000, easing = LinearEasing),
+            label = "progress"
+        )
+
+        LaunchedEffect(Unit) {
+            startAnimation = true
+            delay(1000)
+            showSuccessDialog = false
+            onSuccess()
+        }
+
         AlertDialog(
-            onDismissRequest = {
-                showSuccessDialog = false
-            },
+            onDismissRequest = {},
+            properties = DialogProperties(
+                dismissOnBackPress = false,
+                dismissOnClickOutside = false
+            ),
             containerColor = Color.White,
             titleContentColor = MaterialTheme.colorScheme.onSurface,
             textContentColor = MaterialTheme.colorScheme.onSurface,
@@ -361,27 +388,31 @@ fun LoanApplicationScreen(
                 }
             },
             text = {
-                Text(
-                    text = "Mohon tunggu persetujuan dari tim kami",
-                    textAlign = TextAlign.Center,
+                Column(
                     modifier = Modifier.fillMaxWidth(),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showSuccessDialog = false
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Text("OK")
+                    Text(
+                        text = "Mohon tunggu persetujuan dari tim kami",
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    LinearProgressIndicator(
+                        progress = progress,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(6.dp)
+                            .clip(RoundedCornerShape(50)),
+                        color = MaterialTheme.colorScheme.primary,
+                        trackColor = MaterialTheme.colorScheme.primaryContainer
+                    )
                 }
-            }
+            },
+            confirmButton = {}
         )
     }
 }

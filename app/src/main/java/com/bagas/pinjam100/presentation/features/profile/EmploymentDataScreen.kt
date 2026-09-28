@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Badge
 import androidx.compose.material.icons.filled.Business
@@ -50,6 +51,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -88,6 +90,16 @@ fun EmploymentDataScreen(
     var showEmploymentTypeDialog by remember { mutableStateOf(false) }
     var showDatePicker by remember { mutableStateOf(false) }
 
+    var selectedEmploymentDropdown by remember {
+        mutableStateOf(
+            when {
+                onboardingState.employmentType.isBlank() -> ""
+                onboardingState.employmentType in EmploymentTypes -> onboardingState.employmentType
+                else -> "Lainnya"
+            }
+        )
+    }
+
     val isFormValid = remember(onboardingState) {
         onboardingState.employmentType.isNotBlank() &&
                 onboardingState.companyName.isNotBlank() &&
@@ -121,7 +133,14 @@ fun EmploymentDataScreen(
             items = EmploymentTypes,
             onDismiss = { showEmploymentTypeDialog = false },
             onSelected = {
-                onEmploymentTypeChanged(it)
+                selectedEmploymentDropdown = it
+                if (it != "Lainnya") {
+                    onEmploymentTypeChanged(it)
+                } else {
+                    if (onboardingState.employmentType in EmploymentTypes) {
+                        onEmploymentTypeChanged("")
+                    }
+                }
                 showEmploymentTypeDialog = false
             }
         )
@@ -251,11 +270,21 @@ fun EmploymentDataScreen(
 
                         FormSelectionField(
                             label = "Status Pekerjaan",
-                            value = onboardingState.employmentType,
+                            value = selectedEmploymentDropdown,
                             placeholder = "Pilih status pekerjaan",
                             leadingIcon = Icons.Default.Work,
                             onClick = { showEmploymentTypeDialog = true }
                         )
+
+                        if (selectedEmploymentDropdown == "Lainnya") {
+                            FormTextField(
+                                label = "Status Pekerjaan Lainnya",
+                                value = if (onboardingState.employmentType !in EmploymentTypes) onboardingState.employmentType else "",
+                                placeholder = "Masukkan status pekerjaan",
+                                leadingIcon = Icons.Default.Work,
+                                onValueChange = onEmploymentTypeChanged
+                            )
+                        }
 
                         FormTextField(
                             label = "Nama Perusahaan",
@@ -313,6 +342,7 @@ fun EmploymentDataScreen(
                             value = onboardingState.monthlyIncome,
                             placeholder = "Masukkan penghasilan bulanan",
                             leadingIcon = Icons.Default.MonetizationOn,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                             onValueChange = {
                                 onMonthlyIncomeChanged(formatCurrency(it))
                             }
@@ -333,6 +363,7 @@ fun EmploymentDataScreen(
                             value = onboardingState.companyPhone,
                             placeholder = "Masukkan nomor telepon kantor",
                             leadingIcon = Icons.Default.Phone,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                             onValueChange = {
                                 if (it.length <= 15 && it.all(Char::isDigit)) {
                                     onCompanyPhoneChanged(it)
@@ -402,6 +433,7 @@ private fun FormTextField(
     value: String,
     placeholder: String,
     leadingIcon: androidx.compose.ui.graphics.vector.ImageVector,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default,
     onValueChange: (String) -> Unit = {},
     minLines: Int = 1,
     maxLines: Int = 1
@@ -447,6 +479,7 @@ private fun FormTextField(
                     modifier = Modifier.size(20.dp)
                 )
             },
+            keyboardOptions = keyboardOptions,
             minLines = minLines,
             maxLines = maxLines,
             shape = RoundedCornerShape(12.dp),

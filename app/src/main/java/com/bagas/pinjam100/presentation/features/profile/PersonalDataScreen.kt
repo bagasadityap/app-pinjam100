@@ -111,6 +111,8 @@ fun PersonalDataScreen(
     }
 
     val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = maxAllowedTimestamp,
+        initialDisplayedMonthMillis = maxAllowedTimestamp,
         selectableDates = object : androidx.compose.material3.SelectableDates {
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 return utcTimeMillis <= maxAllowedTimestamp
@@ -155,6 +157,13 @@ fun PersonalDataScreen(
         ) {
             DatePicker(
                 state = datePickerState,
+                title = {
+                    Text(
+                        text = "Pilih Tanggal Lahir (Minimal 18 tahun)",
+                        modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp, bottom = 12.dp),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                },
                 colors = DatePickerDefaults.colors(
                     containerColor = MaterialTheme.colorScheme.surface,
                     titleContentColor = MaterialTheme.colorScheme.onSurface,

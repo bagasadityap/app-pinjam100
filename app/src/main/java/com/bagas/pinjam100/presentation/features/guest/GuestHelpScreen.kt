@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -52,13 +53,11 @@ fun GuestHelpScreen(
         bottomBar = {
             GuestHelpBottomBar(
                 onHomeClick = {
-                    // Mengarahkan ke GuestGraph (beranda guest)
                     navController.navigate(GuestGraph) {
                         popUpTo(GuestGraph) { inclusive = true }
                     }
                 },
                 onLoanClick = {
-                    // Pinjaman mengarah ke AuthGraph
                     navController.navigate(AuthGraph)
                 }
             )
@@ -82,7 +81,8 @@ private fun GuestHelpBottomBar(
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color.Transparent)
+            .background(MaterialTheme.colorScheme.surface)
+            .navigationBarsPadding()
     ) {
         Surface(
             modifier = Modifier
@@ -127,7 +127,6 @@ private fun GuestHelpBottomBar(
                 .align(Alignment.TopCenter)
                 .offset(y = (-20).dp)
                 .clickable(
-                    // Perbaikan: dibungkus remember {} agar efisien dan aman dari error render Compose
                     interactionSource = remember { MutableInteractionSource() },
                     indication = null,
                     onClick = onLoanClick

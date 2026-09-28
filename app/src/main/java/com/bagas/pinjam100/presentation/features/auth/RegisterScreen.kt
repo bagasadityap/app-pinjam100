@@ -89,7 +89,7 @@ fun RegisterScreen(
 
     val emailPattern = android.util.Patterns.EMAIL_ADDRESS
     val isEmailValid = email.isBlank() || emailPattern.matcher(email.trim()).matches()
-    val isPhoneValid = phoneNumber.isBlank() || cleanedPhone.length in 10..13
+    val isPhoneValid = phoneNumber.isBlank() || cleanedPhone.length in 10..12
     val isPasswordLengthValid = password.isBlank() || password.length >= 8
     val isPasswordMatch = confirmPassword.isBlank() || password == confirmPassword
 
@@ -311,7 +311,7 @@ fun RegisterScreen(
                     }
                     if (!isPhoneValid) {
                         Text(
-                            text = "Nomor telepon harus terdiri dari 10-13 digit angka",
+                            text = "Nomor telepon harus terdiri dari 10-12 digit angka",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier.padding(start = 4.dp, top = 2.dp)
@@ -476,8 +476,8 @@ fun RegisterScreen(
                             !emailPattern.matcher(email.trim()).matches() -> {
                                 localError = "Format email tidak valid"
                             }
-                            cleanedPhone.length !in 10..13 -> {
-                                localError = "Nomor telepon harus terdiri dari 10-13 digit angka"
+                            cleanedPhone.length !in 10..12 -> {
+                                localError = "Nomor telepon harus terdiri dari 10-12 digit angka"
                             }
                             password.length < 8 -> {
                                 localError = "Password minimal harus 8 karakter"
